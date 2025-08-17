@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masjid Al-Noor - Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .prayer-time-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .donation-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .financial-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .community-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .islamic-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f9ff' fill-opacity='0.1'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .article-card:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+        .event-card {
+            border-left: 4px solid #4F46E5;
+        }
+        .announcement-banner {
+            background: linear-gradient(90deg, #4F46E5 0%, #7C3AED 100%);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen islamic-pattern">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-mosque text-2xl text-indigo-600 mr-3"></i>
+                        <span class="text-xl font-bold text-gray-800">Masjid Al-Noor</span>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="#" onclick="showSection('home')" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">Home</a>
+                        <a href="#" onclick="showSection('community')" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">Community</a>
+                        <a href="#" onclick="showSection('financial')" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">Financial Dashboard</a>
+                        <a href="#" onclick="showSection('donations')" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">Donations</a>
+                        <a href="#" onclick="showSection('admin')" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium admin-only" style="display:none;">Admin Panel</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="user-info" class="hidden">
+                        <span class="text-sm text-gray-600">Welcome, <span id="username"></span></span>
+                        <button onclick="logout()" class="ml-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </button>
+                    </div>
+                    <button id="login-btn" onclick="showLogin()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Admin Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 fade-in">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-shield text-4xl text-indigo-600 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Admin Login</h2>
+                <p class="text-gray-600">Access administrative features</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <input type="text" id="login-username" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" required>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" onclick="hideLogin()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                        Login
+                    </button>
+                </div>
+            </form>
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <strong>Demo Credentials:</strong><br>
+                Username: admin<br>
+                Password: masjid2024
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Home Section -->
+        <div id="home-section" class="section-content">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Masjid Al-Noor</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    A comprehensive management system for our beloved mosque community, 
+                    featuring financial transparency, donation management, and community engagement tools.
+                </p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                <div class="prayer-time-card text-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Next Prayer</h3>
+                            <p class="text-2xl font-bold" id="next-prayer">Maghrib</p>
+                            <p class="text-sm opacity-90" id="prayer-time">6:45 PM</p>
+                        </div>
+                        <i class="fas fa-pray text-3xl opacity-80"></i>
+                    </div>
+                </div>
+
+                <div class="donation-card text-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Monthly Goal</h3>
+                            <p class="text-2xl font-bold">$<span id="monthly-progress">12,450</span></p>
+                            <p class="text-sm opacity-90">of $15,000</p>
+                        </div>
+                        <i class="fas fa-heart text-3xl opacity-80"></i>
+                    </div>
+                </div>
+
+                <div class="financial-card text-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Total Balance</h3>
+                            <p class="text-2xl font-bold">$<span id="total-balance">45,230</span></p>
+                            <p class="text-sm opacity-90">Available funds</p>
+                        </div>
+                        <i class="fas fa-coins text-3xl opacity-80"></i>
+                    </div>
+                </div>
+
+                <div class="community-card text-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Community</h3>
+                            <p class="text-2xl font-bold"><span id="community-members">485</span></p>
+                            <p class="text-sm opacity-90">Active members</p>
+                        </div>
+                        <i class="fas fa-users text-3xl opacity-80"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Recent Activities</h2>
+                <div class="space-y-4" id="recent-activities">
+                    <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                        <i class="fas fa-donate text-green-600 mr-4"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">New donation received</p>
+                            <p class="text-sm text-gray-600">$500 for General Fund - 2 hours ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-blue-50 rounded-lg">
+                        <i class="fas fa-calendar text-blue-600 mr-4"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">Event scheduled</p>
+                            <p class="text-sm text-gray-600">Friday Khutbah - Community Service - Tomorrow</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-purple-50 rounded-lg">
+                        <i class="fas fa-receipt text-purple-600 mr-4"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">Expense recorded</p>
+                            <p class="text-sm text-gray-600">$200 for Utilities - Yesterday</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Community Section -->
+        <div id="community-section" class="section-content hidden">
+            <!-- Announcement Banner -->
+            <div class="announcement-banner text-white p-6 rounded-xl shadow-lg mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">📢 Important Announcement</h2>
+                        <p class="text-lg">Ramadan preparation meeting this Friday after Maghrib prayer. All community members welcome!</p>
+                    </div>
+                    <i class="fas fa-bullhorn text-4xl opacity-80"></i>
+                </div>
+            </div>
+
+            <!-- Community Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <i class="fas fa-users text-3xl text-blue-600 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">485</h3>
+                    <p class="text-gray-600">Active Members</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <i class="fas fa-calendar-check text-3xl text-green-600 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">12</h3>
+                    <p class="text-gray-600">Upcoming Events</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <i class="fas fa-book-open text-3xl text-purple-600 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">8</h3>
+                    <p class="text-gray-600">Study Circles</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <i class="fas fa-hands-helping text-3xl text-orange-600 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">25</h3>
+                    <p class="text-gray-600">Volunteers</p>
+                </div>
+            </div>
+
+            <!-- Featured Articles and Events -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Featured Articles -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">Featured Articles</h3>
+                        <button onclick="showAllArticles()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View All</button>
+                    </div>
+                    
+                    <div class="space-y-4" id="featured-articles">
+                        <article class="article-card border border-gray-200 rounded-lg p-4 cursor-pointer" onclick="openArticle('ramadan-prep')">
+                            <div class="flex items-start space-x-4">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60' viewBox='0 0 80 60'%3E%3Crect width='80' height='60' fill='%234F46E5'/%3E%3Ctext x='40' y='35' font-family='Arial' font-size='24' fill='white' text-anchor='middle'%3E🌙%3C/text%3E%3C/svg%3E" alt="Ramadan" class="w-20 h-15 rounded-lg object-cover">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Preparing for Ramadan: A Community Guide</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Essential tips and spiritual preparation for the blessed month ahead...</p>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Dec 10, 2024</span>
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-user mr-1"></i>
+                                        <span>Imam Ahmad</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="article-card border border-gray-200 rounded-lg p-4 cursor-pointer" onclick="openArticle('charity-importance')">
+                            <div class="flex items-start space-x-4">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60' viewBox='0 0 80 60'%3E%3Crect width='80' height='60' fill='%2310B981'/%3E%3Ctext x='40' y='35' font-family='Arial' font-size='24' fill='white' text-anchor='middle'%3E💝%3C/text%3E%3C/svg%3E" alt="Charity" class="w-20 h-15 rounded-lg object-cover">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800 mb-2">The Importance of Charity in Islam</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Understanding Zakat, Sadaqah, and their impact on our community...</p>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Dec 8, 2024</span>
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-user mr-1"></i>
+                                        <span>Dr. Fatima</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="article-card border border-gray-200 rounded-lg p-4 cursor-pointer" onclick="openArticle('youth-programs')">
+                            <div class="flex items-start space-x-4">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60' viewBox='0 0 80 60'%3E%3Crect width='80' height='60' fill='%23F59E0B'/%3E%3Ctext x='40' y='35' font-family='Arial' font-size='24' fill='white' text-anchor='middle'%3E👥%3C/text%3E%3C/svg%3E" alt="Youth" class="w-20 h-15 rounded-lg object-cover">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Youth Programs: Building Tomorrow's Leaders</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Exciting new initiatives for our young community members...</p>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Dec 5, 2024</span>
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-user mr-1"></i>
+                                        <span>Brother Omar</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Upcoming Events -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">Upcoming Events</h3>
+                        <button onclick="showAllEvents()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View Calendar</button>
+                    </div>
+                    
+                    <div class="space-y-4" id="upcoming-events">
+                        <div class="event-card bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800">Friday Khutbah</h4>
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Weekly</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Topic: "Patience in Times of Trial"</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>Every Friday, 1:00 PM</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>Main Prayer Hall</span>
+                            </div>
+                        </div>
+
+                        <div class="event-card bg-green-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800">Community Iftar Planning</h4>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Meeting</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Planning session for Ramadan community iftars</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>Dec 18, 2024, 7:30 PM</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>Community Room</span>
+                            </div>
+                        </div>
+
+                        <div class="event-card bg-purple-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800">Islamic History Study Circle</h4>
+                                <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Education</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">The Golden Age of Islamic Civilization</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>Dec 20, 2024, 6:00 PM</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>Library</span>
+                            </div>
+                        </div>
+
+                        <div class="event-card bg-orange-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800">Youth Basketball Tournament</h4>
+                                <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">Sports</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Annual youth basketball championship</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>Dec 22, 2024, 2:00 PM</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>Gymnasium</span>
+                            </div>
+                        </div>
+
+                        <div class="event-card bg-red-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800">Food Drive Collection</h4>
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Charity</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Winter food drive for local families in need</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>Dec 25, 2024, All Day</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>Main Entrance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Programs -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">Community Programs</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                        <i class="fas fa-graduation-cap text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Islamic Education</h4>
+                        <p class="text-sm text-gray-600 mb-4">Quran classes, Arabic lessons, and Islamic studies for all ages</p>
+                        <button onclick="showProgramDetails('education')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                            Learn More
+                        </button>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                        <i class="fas fa-heart text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Community Outreach</h4>
+                        <p class="text-sm text-gray-600 mb-4">Food drives, charity work, and community service initiatives</p>
+                        <button onclick="showProgramDetails('outreach')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                            Get Involved
+                        </button>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                        <i class="fas fa-users text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Youth Programs</h4>
+                        <p class="text-sm text-gray-600 mb-4">Sports, mentorship, leadership development for young Muslims</p>
+                        <button onclick="showProgramDetails('youth')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                            Join Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prayer Times Schedule -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">Daily Prayer Times</h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg">
+                        <i class="fas fa-sun text-2xl text-indigo-600 mb-2"></i>
+                        <h4 class="font-semibold text-gray-800">Fajr</h4>
+                        <p class="text-lg font-bold text-indigo-600">5:30 AM</p>
+                        <p class="text-xs text-gray-600">Iqamah: 5:45 AM</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg">
+                        <i class="fas fa-sun text-2xl text-yellow-600 mb-2"></i>
+                        <h4 class="font-semibold text-gray-800">Dhuhr</h4>
+                        <p class="text-lg font-bold text-yellow-600">12:45 PM</p>
+                        <p class="text-xs text-gray-600">Iqamah: 1:00 PM</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+                        <i class="fas fa-sun text-2xl text-orange-600 mb-2"></i>
+                        <h4 class="font-semibold text-gray-800">Asr</h4>
+                        <p class="text-lg font-bold text-orange-600">4:15 PM</p>
+                        <p class="text-xs text-gray-600">Iqamah: 4:30 PM</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+                        <i class="fas fa-moon text-2xl text-red-600 mb-2"></i>
+                        <h4 class="font-semibold text-gray-800">Maghrib</h4>
+                        <p class="text-lg font-bold text-red-600">6:45 PM</p>
+                        <p class="text-xs text-gray-600">Iqamah: 6:50 PM</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                        <i class="fas fa-moon text-2xl text-purple-600 mb-2"></i>
+                        <h4 class="font-semibold text-gray-800">Isha</h4>
+                        <p class="text-lg font-bold text-purple-600">8:30 PM</p>
+                        <p class="text-xs text-gray-600">Iqamah: 8:45 PM</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Friday Jummah</h4>
+                            <p class="text-sm text-gray-600">Khutbah starts at 1:00 PM • Prayer at 1:30 PM</p>
+                        </div>
+                        <i class="fas fa-calendar-day text-2xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community News & Updates -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">Community News & Updates</h3>
+                
+                <div class="space-y-4">
+                    <div class="border-l-4 border-green-500 pl-4 py-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-800">New Wudu Facilities Completed</h4>
+                            <span class="text-xs text-gray-500">2 days ago</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">The renovation of our wudu facilities has been completed. The new facilities include improved accessibility features and energy-efficient fixtures.</p>
+                    </div>
+
+                    <div class="border-l-4 border-blue-500 pl-4 py-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-800">Ramadan Schedule Released</h4>
+                            <span class="text-xs text-gray-500">1 week ago</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">The complete Ramadan schedule including Tarawih prayers, Iftar times, and special programs is now available at the information desk.</p>
+                    </div>
+
+                    <div class="border-l-4 border-purple-500 pl-4 py-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-800">New Islamic Library Section</h4>
+                            <span class="text-xs text-gray-500">2 weeks ago</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">We've added a new children's section to our Islamic library with age-appropriate books, stories, and educational materials.</p>
+                    </div>
+
+                    <div class="border-l-4 border-orange-500 pl-4 py-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-800">Volunteer Appreciation Dinner</h4>
+                            <span class="text-xs text-gray-500">3 weeks ago</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">Thank you to all our volunteers! The appreciation dinner was a great success with over 50 volunteers and their families attending.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Dashboard Section -->
+        <div id="financial-section" class="section-content hidden">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Financial Dashboard</h2>
+                <p class="text-gray-600">Complete transparency of mosque finances for the community</p>
+            </div>
+
+            <!-- Financial Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Balance</p>
+                            <p class="text-2xl font-bold text-green-600">$<span id="dashboard-balance">45,230</span></p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-wallet text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Monthly Income</p>
+                            <p class="text-2xl font-bold text-blue-600">$<span id="monthly-income">12,450</span></p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-arrow-up text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Monthly Expenses</p>
+                            <p class="text-2xl font-bold text-red-600">$<span id="monthly-expenses">8,750</span></p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <i class="fas fa-arrow-down text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Net Income</p>
+                            <p class="text-2xl font-bold text-purple-600">$<span id="net-income">3,700</span></p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-chart-line text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Detailed View -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Income vs Expenses Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Comparison</h3>
+                    <div class="relative h-64">
+                        <canvas id="incomeExpenseChart" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+
+                <!-- Fund Allocation -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Fund Allocation</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                                <span class="text-gray-700">General Fund</span>
+                            </div>
+                            <span class="font-semibold">$25,430 (56%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 56%"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                                <span class="text-gray-700">Building Fund</span>
+                            </div>
+                            <span class="font-semibold">$12,800 (28%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: 28%"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                                <span class="text-gray-700">Emergency Fund</span>
+                            </div>
+                            <span class="font-semibold">$7,000 (16%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: 16%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Recent Transactions</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="filterTransactions('all')" class="filter-btn active px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white">All</button>
+                        <button onclick="filterTransactions('income')" class="filter-btn px-4 py-2 rounded-lg text-sm bg-gray-200 text-gray-700">Income</button>
+                        <button onclick="filterTransactions('expense')" class="filter-btn px-4 py-2 rounded-lg text-sm bg-gray-200 text-gray-700">Expenses</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Description</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Category</th>
+                                <th class="text-right py-3 px-4 font-semibold text-gray-700">Amount</th>
+                                <th class="text-center py-3 px-4 font-semibold text-gray-700">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-table">
+                            <tr class="border-b border-gray-100 transaction-row" data-type="income">
+                                <td class="py-3 px-4 text-gray-600">Dec 15, 2024</td>
+                                <td class="py-3 px-4 text-gray-800">Friday Collection</td>
+                                <td class="py-3 px-4 text-gray-600">General Donation</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">+$1,250</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Income</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 transaction-row" data-type="expense">
+                                <td class="py-3 px-4 text-gray-600">Dec 14, 2024</td>
+                                <td class="py-3 px-4 text-gray-800">Electricity Bill</td>
+                                <td class="py-3 px-4 text-gray-600">Utilities</td>
+                                <td class="py-3 px-4 text-right font-semibold text-red-600">-$320</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expense</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 transaction-row" data-type="income">
+                                <td class="py-3 px-4 text-gray-600">Dec 13, 2024</td>
+                                <td class="py-3 px-4 text-gray-800">Zakat Collection</td>
+                                <td class="py-3 px-4 text-gray-600">Zakat</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">+$2,500</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Income</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 transaction-row" data-type="expense">
+                                <td class="py-3 px-4 text-gray-600">Dec 12, 2024</td>
+                                <td class="py-3 px-4 text-gray-800">Cleaning Supplies</td>
+                                <td class="py-3 px-4 text-gray-600">Maintenance</td>
+                                <td class="py-3 px-4 text-right font-semibold text-red-600">-$85</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expense</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 transaction-row" data-type="income">
+                                <td class="py-3 px-4 text-gray-600">Dec 11, 2024</td>
+                                <td class="py-3 px-4 text-gray-800">Building Fund Donation</td>
+                                <td class="py-3 px-4 text-gray-600">Building Fund</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">+$5,000</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Income</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Monthly Reports -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Monthly Financial Reports</h3>
+                    <button onclick="generateReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <i class="fas fa-download mr-2"></i>Generate Report
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-file-pdf text-3xl text-red-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">November 2024</h4>
+                        <p class="text-sm text-gray-600 mb-3">Complete financial report</p>
+                        <button class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Download PDF</button>
+                    </div>
+
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-file-pdf text-3xl text-red-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">October 2024</h4>
+                        <p class="text-sm text-gray-600 mb-3">Complete financial report</p>
+                        <button class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Download PDF</button>
+                    </div>
+
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-file-pdf text-3xl text-red-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">September 2024</h4>
+                        <p class="text-sm text-gray-600 mb-3">Complete financial report</p>
+                        <button class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Download PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donations Section -->
+        <div id="donations-section" class="section-content hidden">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Donation Management</h2>
+                <p class="text-gray-600">Secure online giving platform for our mosque community</p>
+            </div>
+
+            <!-- Donation Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Today's Donations</p>
+                            <p class="text-2xl font-bold text-green-600">$<span id="today-donations">1,250</span></p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-hand-holding-heart text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">This Month</p>
+                            <p class="text-2xl font-bold text-blue-600">$<span id="month-donations">12,450</span></p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-calendar-alt text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Donors</p>
+                            <p class="text-2xl font-bold text-purple-600"><span id="total-donors">247</span></p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-users text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Avg. Donation</p>
+                            <p class="text-2xl font-bold text-orange-600">$<span id="avg-donation">85</span></p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-full">
+                            <i class="fas fa-chart-bar text-orange-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Donation Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Make a Donation</h3>
+                    <form onsubmit="processDonation(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Donation Type</label>
+                            <select id="donation-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" required>
+                                <option value="">Select donation type</option>
+                                <option value="general">General Fund</option>
+                                <option value="zakat">Zakat</option>
+                                <option value="sadaqah">Sadaqah</option>
+                                <option value="building">Building Fund</option>
+                                <option value="emergency">Emergency Fund</option>
+                                <option value="iftar">Iftar Sponsorship</option>
+                                <option value="education">Islamic Education</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Amount</label>
+                            <div class="grid grid-cols-4 gap-2 mb-3">
+                                <button type="button" onclick="setAmount(25)" class="amount-btn bg-gray-100 hover:bg-indigo-100 text-gray-700 py-2 rounded-lg text-sm">$25</button>
+                                <button type="button" onclick="setAmount(50)" class="amount-btn bg-gray-100 hover:bg-indigo-100 text-gray-700 py-2 rounded-lg text-sm">$50</button>
+                                <button type="button" onclick="setAmount(100)" class="amount-btn bg-gray-100 hover:bg-indigo-100 text-gray-700 py-2 rounded-lg text-sm">$100</button>
+                                <button type="button" onclick="setAmount(250)" class="amount-btn bg-gray-100 hover:bg-indigo-100 text-gray-700 py-2 rounded-lg text-sm">$250</button>
+                            </div>
+                            <input type="number" id="donation-amount" placeholder="Enter custom amount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" min="1" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Donor Information</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" id="donor-name" placeholder="Full Name" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" required>
+                                <input type="email" id="donor-email" placeholder="Email Address" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" required>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Phone Number (Optional)</label>
+                            <input type="tel" id="donor-phone" placeholder="Phone Number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="anonymous-donation" class="mr-2">
+                            <label for="anonymous-donation" class="text-sm text-gray-700">Make this donation anonymous</label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="recurring-donation" class="mr-2">
+                            <label for="recurring-donation" class="text-sm text-gray-700">Make this a monthly recurring donation</label>
+                        </div>
+
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold">
+                            <i class="fas fa-heart mr-2"></i>Donate Now
+                        </button>
+                    </form>
+
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Demo Mode:</strong> This is a demonstration. No actual payment will be processed.
+                    </div>
+                </div>
+
+                <!-- Donation Goals Progress -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Current Campaigns</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold text-gray-800">Monthly Operating Expenses</h4>
+                                <span class="text-sm text-gray-600">83% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                <div class="bg-green-500 h-3 rounded-full" style="width: 83%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>$12,450 raised</span>
+                                <span>Goal: $15,000</span>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-gray-200 pb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold text-gray-800">New Prayer Hall Expansion</h4>
+                                <span class="text-sm text-gray-600">45% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                <div class="bg-blue-500 h-3 rounded-full" style="width: 45%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>$45,000 raised</span>
+                                <span>Goal: $100,000</span>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-gray-200 pb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold text-gray-800">Ramadan Iftar Program</h4>
+                                <span class="text-sm text-gray-600">92% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                <div class="bg-purple-500 h-3 rounded-full" style="width: 92%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>$4,600 raised</span>
+                                <span>Goal: $5,000</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold text-gray-800">Emergency Relief Fund</h4>
+                                <span class="text-sm text-gray-600">28% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                <div class="bg-red-500 h-3 rounded-full" style="width: 28%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>$2,800 raised</span>
+                                <span>Goal: $10,000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Donations -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Recent Donations</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="filterDonations('all')" class="donation-filter-btn active px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white">All</button>
+                        <button onclick="filterDonations('today')" class="donation-filter-btn px-4 py-2 rounded-lg text-sm bg-gray-200 text-gray-700">Today</button>
+                        <button onclick="filterDonations('week')" class="donation-filter-btn px-4 py-2 rounded-lg text-sm bg-gray-200 text-gray-700">This Week</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Donor</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
+                                <th class="text-right py-3 px-4 font-semibold text-gray-700">Amount</th>
+                                <th class="text-center py-3 px-4 font-semibold text-gray-700">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donations-table">
+                            <tr class="border-b border-gray-100 donation-row" data-period="today">
+                                <td class="py-3 px-4 text-gray-600">Dec 15, 2024 - 2:30 PM</td>
+                                <td class="py-3 px-4 text-gray-800">Ahmad Hassan</td>
+                                <td class="py-3 px-4 text-gray-600">General Fund</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">$500</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 donation-row" data-period="today">
+                                <td class="py-3 px-4 text-gray-600">Dec 15, 2024 - 11:15 AM</td>
+                                <td class="py-3 px-4 text-gray-800">Anonymous</td>
+                                <td class="py-3 px-4 text-gray-600">Zakat</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">$250</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 donation-row" data-period="week">
+                                <td class="py-3 px-4 text-gray-600">Dec 14, 2024 - 6:45 PM</td>
+                                <td class="py-3 px-4 text-gray-800">Fatima Al-Zahra</td>
+                                <td class="py-3 px-4 text-gray-600">Building Fund</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">$1,000</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 donation-row" data-period="week">
+                                <td class="py-3 px-4 text-gray-600">Dec 13, 2024 - 3:20 PM</td>
+                                <td class="py-3 px-4 text-gray-800">Omar Abdullah</td>
+                                <td class="py-3 px-4 text-gray-600">Sadaqah</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">$75</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100 donation-row" data-period="week">
+                                <td class="py-3 px-4 text-gray-600">Dec 12, 2024 - 7:10 PM</td>
+                                <td class="py-3 px-4 text-gray-800">Aisha Mohamed</td>
+                                <td class="py-3 px-4 text-gray-600">Iftar Sponsorship</td>
+                                <td class="py-3 px-4 text-right font-semibold text-green-600">$150</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Donor Management (Admin Only) -->
+            <div class="admin-only bg-white rounded-xl shadow-lg p-6" style="display:none;">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Donor Management</h3>
+                    <button onclick="exportDonorList()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <i class="fas fa-download mr-2"></i>Export Donor List
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <i class="fas fa-users text-3xl text-blue-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">Total Donors</h4>
+                        <p class="text-2xl font-bold text-blue-600">247</p>
+                        <p class="text-sm text-gray-600">Active contributors</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <i class="fas fa-sync-alt text-3xl text-green-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">Recurring Donors</h4>
+                        <p class="text-2xl font-bold text-green-600">89</p>
+                        <p class="text-sm text-gray-600">Monthly contributors</p>
+                    </div>
+
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <i class="fas fa-star text-3xl text-purple-600 mb-3"></i>
+                        <h4 class="font-semibold text-gray-800">Major Donors</h4>
+                        <p class="text-2xl font-bold text-purple-600">23</p>
+                        <p class="text-sm text-gray-600">$1000+ annually</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-section" class="section-content hidden admin-only">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Administrative Panel</h2>
+            <p class="text-gray-600">Admin panel will be implemented in Part 5...</p>
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="article-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto fade-in">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="article-title" class="text-2xl font-bold text-gray-800"></h2>
+                    <button onclick="closeArticle()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="article-content" class="prose max-w-none">
+                    <!-- Article content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <div id="admin-section" class="section-content admin-only hidden">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">Administrative Panel</h2>
+    <p class="text-gray-600 mb-6">Manage users, content, and system settings.</p>
+
+    <!-- Admin Navigation Tabs -->
+    <div class="mb-6">
+        <button onclick="showAdminTab('users')" class="admin-tab-btn bg-indigo-600 text-white px-4 py-2 rounded-lg mr-2">User Management</button>
+        <button onclick="showAdminTab('content')" class="admin-tab-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg mr-2">Content Management</button>
+        <button onclick="showAdminTab('system')" class="admin-tab-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">System Settings</button>
+    </div>
+
+    <!-- User Management Tab -->
+    <div id="admin-users" class="admin-tab-content">
+        <h3 class="text-xl font-bold mb-4">User Management</h3>
+        <p class="mb-4 text-gray-700">View and manage application users.</p>
+        
+        <table class="w-full mb-4 border border-gray-300 rounded-lg">
+            <thead>
+                <tr class="bg-indigo-100 text-indigo-700">
+                    <th class="border border-gray-300 px-4 py-2 text-left">Username</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Name</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Role</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="user-management-table">
+                <!-- Filled dynamically -->
+            </tbody>
+        </table>
+        
+        <button onclick="showAddUserForm()" class="bg-green-600 text-white px-4 py-2 rounded-lg">Add New User</button>
+
+        <!-- Add User Form -->
+        <div id="add-user-form" class="mt-6 p-4 bg-gray-100 rounded-lg hidden">
+            <h4 class="text-lg font-semibold mb-3">Add User</h4>
+            <form onsubmit="addUser(event)">
+                <div class="mb-3">
+                    <label class="block mb-1">Username:</label>
+                    <input type="text" id="new-username" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Name:</label>
+                    <input type="text" id="new-name" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Role:</label>
+                    <select id="new-role" required class="w-full px-3 py-2 border rounded">
+                        <option value="admin">Admin</option>
+                        <option value="treasurer">Treasurer</option>
+                        <option value="imam">Imam</option>
+                        <option value="user">User</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Password:</label>
+                    <input type="password" id="new-password" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Add User</button>
+                <button type="button" onclick="hideAddUserForm()" class="ml-3 px-4 py-2 rounded-lg border border-gray-400">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Management Tab -->
+    <div id="admin-content" class="admin-tab-content hidden">
+        <h3 class="text-xl font-bold mb-4">Content Management</h3>
+        <p class="text-gray-700 mb-4">Manage articles and events displayed in the community section.</p>
+        
+        <button onclick="showAddArticleForm()" class="bg-green-600 text-white px-4 py-2 rounded-lg mb-4">Add New Article</button>
+        
+        <div id="article-list" class="mb-6">
+            <!-- Dynamically populated articles list with edit/delete actions -->
+        </div>
+
+        <!-- Add/Edit Article Form -->
+        <div id="add-article-form" class="hidden p-4 bg-gray-100 rounded-lg">
+            <h4 class="text-lg font-semibold mb-3">Add/Edit Article</h4>
+            <form onsubmit="saveArticle(event)">
+                <div class="mb-3">
+                    <label class="block mb-1">Title:</label>
+                    <input type="text" id="article-title-input" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Author:</label>
+                    <input type="text" id="article-author-input" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Date:</label>
+                    <input type="date" id="article-date-input" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div class="mb-3">
+                    <label class="block mb-1">Content (HTML allowed):</label>
+                    <textarea id="article-content-input" rows="6" required class="w-full px-3 py-2 border rounded"></textarea>
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Article</button>
+                <button type="button" onclick="hideAddArticleForm()" class="ml-3 px-4 py-2 rounded-lg border border-gray-400">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- System Settings Tab -->
+    <div id="admin-system" class="admin-tab-content hidden">
+        <h3 class="text-xl font-bold mb-4">System Settings</h3>
+        <p class="text-gray-700 mb-4">Configure system-wide settings.</p>
+        
+        <div class="mb-6">
+            <label class="block mb-2 font-semibold">System Maintenance Mode</label>
+            <button onclick="toggleMaintenanceMode()" id="maintenance-toggle" class="bg-red-600 text-white px-4 py-2 rounded-lg">Enable Maintenance</button>
+            <p id="maintenance-status" class="mt-2 text-gray-600">Maintenance mode is currently off.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h4 class="font-semibold mb-3">System Information</h4>
+                <p class="text-sm text-gray-600 mb-2">Version: 1.0.0</p>
+                <p class="text-sm text-gray-600 mb-2">Last Updated: Dec 15, 2024</p>
+                <p class="text-sm text-gray-600">Database Status: Connected</p>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h4 class="font-semibold mb-3">Quick Actions</h4>
+                <button onclick="backupData()" class="bg-blue-600 text-white px-3 py-2 rounded mb-2 mr-2">Backup Data</button>
+                <button onclick="clearCache()" class="bg-yellow-600 text-white px-3 py-2 rounded mb-2">Clear Cache</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        // Application State
+        let currentUser = null;
+        let isLoggedIn = false;
+        let currentSection = 'home';
+
+        // Mock Database (will be replaced with spreadsheet integration in Part 6)
+        const mockDatabase = {
+            users: [
+                { username: 'admin', password: 'masjid2024', role: 'admin', name: 'Administrator' },
+                { username: 'treasurer', password: 'finance123', role: 'treasurer', name: 'Treasurer' },
+                { username: 'imam', password: 'imam123', role: 'imam', name: 'Imam Ahmad' }
+            ],
+            finances: {
+                totalBalance: 45230,
+                monthlyGoal: 15000,
+                monthlyProgress: 12450,
+                expenses: [],
+                donations: []
+            },
+            activities: [],
+            articles: {
+                'ramadan-prep': {
+                    title: 'Preparing for Ramadan: A Community Guide',
+                    author: 'Imam Ahmad',
+                    date: 'Dec 10, 2024',
+                    content: `
+                        <h3>Introduction</h3>
+                        <p>As we approach the blessed month of Ramadan, it's important for our community to prepare both spiritually and practically. This guide will help you make the most of this sacred time.</p>
+                        
+                        <h3>Spiritual Preparation</h3>
+                        <p>Begin by increasing your daily prayers and Quran recitation. Set aside time each day for reflection and dhikr. Consider establishing a daily routine that will help you maintain consistency throughout Ramadan.</p>
+                        
+                        <h3>Physical Preparation</h3>
+                        <p>Gradually adjust your eating schedule in the weeks leading up to Ramadan. This will help your body adapt to the fasting schedule more easily.</p>
+                        
+                        <h3>Community Involvement</h3>
+                        <p>Join our community iftar planning committee and volunteer for various Ramadan activities. Together, we can make this Ramadan memorable for everyone.</p>
+                    `
+                },
+                'charity-importance': {
+                    title: 'The Importance of Charity in Islam',
+                    author: 'Dr. Fatima',
+                    date: 'Dec 8, 2024',
+                    content: `
+                        <h3>Understanding Zakat</h3>
+                        <p>Zakat is one of the five pillars of Islam and represents our obligation to help those in need. It purifies our wealth and brings us closer to Allah.</p>
+                        
+                        <h3>Sadaqah: Voluntary Charity</h3>
+                        <p>Beyond the obligatory Zakat, Islam encourages voluntary charity (Sadaqah) as a means of earning Allah's pleasure and helping our community.</p>
+                        
+                        <h3>Impact on Our Community</h3>
+                        <p>Your charitable contributions directly support our mosque's operations, community programs, and outreach initiatives. Every donation, no matter the size, makes a difference.</p>
+                    `
+                },
+                'youth-programs': {
+                    title: 'Youth Programs: Building Tomorrow\'s Leaders',
+                    author: 'Brother Omar',
+                    date: 'Dec 5, 2024',
+                    content: `
+                        <h3>Our Vision</h3>
+                        <p>We believe in nurturing the next generation of Muslim leaders through comprehensive youth programs that combine Islamic education with modern skills.</p>
+                        
+                        <h3>Current Programs</h3>
+                        <p>Our youth programs include Islamic studies, leadership workshops, sports activities, and community service projects. We also offer mentorship opportunities with community leaders.</p>
+                        
+                        <h3>Get Involved</h3>
+                        <p>Whether you're a young person looking to participate or an adult wanting to volunteer as a mentor, there are many ways to get involved in our youth programs.</p>
+                    `
+                }
+            }
+        };
+
+        // Authentication Functions
+        function showLogin() {
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function hideLogin() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            const user = mockDatabase.users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                isLoggedIn = true;
+                updateUIForLoggedInUser();
+                hideLogin();
+                showNotification('Login successful!', 'success');
+            } else {
+                showNotification('Invalid credentials. Please try again.', 'error');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            isLoggedIn = false;
+            updateUIForLoggedOutUser();
+            showSection('home');
+            showNotification('Logged out successfully', 'info');
+        }
+
+        function updateUIForLoggedInUser() {
+            document.getElementById('login-btn').style.display = 'none';
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('username').textContent = currentUser.name;
+            
+            // Show admin-only elements
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+            });
+        }
+
+        function updateUIForLoggedOutUser() {
+            document.getElementById('login-btn').style.display = 'block';
+            document.getElementById('user-info').classList.add('hidden');
+            
+            // Hide admin-only elements
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+
+        // Navigation Functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.remove('hidden');
+            currentSection = sectionName;
+
+            // Update navigation active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                link.classList.add('text-gray-700');
+            });
+
+            // Add active state to current nav item
+            if (event && event.target) {
+                event.target.classList.remove('text-gray-700');
+                event.target.classList.add('text-indigo-600');
+            }
+        }
+
+        // Community Functions
+        function openArticle(articleId) {
+            const article = mockDatabase.articles[articleId];
+            if (article) {
+                document.getElementById('article-title').textContent = article.title;
+                document.getElementById('article-content').innerHTML = article.content;
+                document.getElementById('article-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeArticle() {
+            document.getElementById('article-modal').classList.add('hidden');
+        }
+
+        function showAllArticles() {
+            showNotification('Full article archive coming soon!', 'info');
+        }
+
+        function showAllEvents() {
+            showNotification('Full event calendar coming soon!', 'info');
+        }
+
+        function showProgramDetails(program) {
+            const messages = {
+                'education': 'Islamic Education program details and enrollment information coming soon!',
+                'outreach': 'Community Outreach volunteer opportunities and upcoming projects coming soon!',
+                'youth': 'Youth Programs registration and activity schedules coming soon!'
+            };
+            showNotification(messages[program], 'info');
+        }
+
+        // Notification System
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+
+            notification.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Prayer Times (Mock data - would integrate with Islamic API)
+        function updatePrayerTimes() {
+            const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+            const times = ['5:30 AM', '12:45 PM', '4:15 PM', '6:45 PM', '8:30 PM'];
+            
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            let nextPrayer = 'Fajr';
+            let nextTime = '5:30 AM';
+            
+            if (currentHour >= 5 && currentHour < 12) {
+                nextPrayer = 'Dhuhr';
+                nextTime = '12:45 PM';
+            } else if (currentHour >= 12 && currentHour < 16) {
+                nextPrayer = 'Asr';
+                nextTime = '4:15 PM';
+            } else if (currentHour >= 16 && currentHour < 18) {
+                nextPrayer = 'Maghrib';
+                nextTime = '6:45 PM';
+            } else if (currentHour >= 18 && currentHour < 20) {
+                nextPrayer = 'Isha';
+                nextTime = '8:30 PM';
+            }
+
+            document.getElementById('next-prayer').textContent = nextPrayer;
+            document.getElementById('prayer-time').textContent = nextTime;
+        }
+
+        // Initialize Application
+        function initializeApp() {
+            updatePrayerTimes();
+            
+            // Update prayer times every minute
+            setInterval(updatePrayerTimes, 60000);
+            
+            // Update financial displays
+            document.getElementById('monthly-progress').textContent = mockDatabase.finances.monthlyProgress.toLocaleString();
+            document.getElementById('total-balance').textContent = mockDatabase.finances.totalBalance.toLocaleString();
+        }
+
+        // Financial Dashboard Functions
+        function filterTransactions(type) {
+            const rows = document.querySelectorAll('.transaction-row');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            // Update button states
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-indigo-600', 'text-white');
+            
+            // Filter rows
+            rows.forEach(row => {
+                if (type === 'all' || row.dataset.type === type) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function generateReport() {
+            showNotification('Financial report generated successfully!', 'success');
+            
+            // Create a simple CSV report
+            const reportData = [
+                ['Date', 'Description', 'Category', 'Amount', 'Type'],
+                ['Dec 15, 2024', 'Friday Collection', 'General Donation', '1250', 'Income'],
+                ['Dec 14, 2024', 'Electricity Bill', 'Utilities', '-320', 'Expense'],
+                ['Dec 13, 2024', 'Zakat Collection', 'Zakat', '2500', 'Income'],
+                ['Dec 12, 2024', 'Cleaning Supplies', 'Maintenance', '-85', 'Expense'],
+                ['Dec 11, 2024', 'Building Fund Donation', 'Building Fund', '5000', 'Income']
+            ];
+            
+            const csvContent = reportData.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mosque-financial-report.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function initializeFinancialChart() {
+            const canvas = document.getElementById('incomeExpenseChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            
+            // Simple bar chart data
+            const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const income = [10500, 11200, 12800, 11900, 12450];
+            const expenses = [8200, 7800, 9100, 8500, 8750];
+            
+            const maxValue = Math.max(...income, ...expenses);
+            const barWidth = width / (months.length * 2 + 1);
+            const chartHeight = height - 60;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw bars
+            months.forEach((month, index) => {
+                const x = (index * 2 + 1) * barWidth;
+                
+                // Income bar (blue)
+                const incomeHeight = (income[index] / maxValue) * chartHeight;
+                ctx.fillStyle = '#3B82F6';
+                ctx.fillRect(x, height - incomeHeight - 30, barWidth * 0.8, incomeHeight);
+                
+                // Expense bar (red)
+                const expenseHeight = (expenses[index] / maxValue) * chartHeight;
+                ctx.fillStyle = '#EF4444';
+                ctx.fillRect(x + barWidth, height - expenseHeight - 30, barWidth * 0.8, expenseHeight);
+                
+                // Month labels
+                ctx.fillStyle = '#374151';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(month, x + barWidth, height - 10);
+            });
+            
+            // Legend
+            ctx.fillStyle = '#3B82F6';
+            ctx.fillRect(20, 20, 15, 15);
+            ctx.fillStyle = '#374151';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Income', 40, 32);
+            
+            ctx.fillStyle = '#EF4444';
+            ctx.fillRect(100, 20, 15, 15);
+            ctx.fillText('Expenses', 120, 32);
+        }
+
+        // Donation Management Functions
+        function setAmount(amount) {
+            document.getElementById('donation-amount').value = amount;
+            
+            // Update button states
+            document.querySelectorAll('.amount-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
+            event.target.classList.add('bg-indigo-600', 'text-white');
+        }
+
+        function processDonation(event) {
+            event.preventDefault();
+            
+            const donationType = document.getElementById('donation-type').value;
+            const amount = document.getElementById('donation-amount').value;
+            const donorName = document.getElementById('donor-name').value;
+            const donorEmail = document.getElementById('donor-email').value;
+            const donorPhone = document.getElementById('donor-phone').value;
+            const isAnonymous = document.getElementById('anonymous-donation').checked;
+            const isRecurring = document.getElementById('recurring-donation').checked;
+
+            // Simulate donation processing
+            showNotification('Processing donation...', 'info');
+            
+            setTimeout(() => {
+                // Add donation to recent donations table
+                const donationsTable = document.getElementById('donations-table');
+                const newRow = document.createElement('tr');
+                newRow.className = 'border-b border-gray-100 donation-row';
+                newRow.setAttribute('data-period', 'today');
+                
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                }) + ' - ' + now.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+
+                newRow.innerHTML = `
+                    <td class="py-3 px-4 text-gray-600">${dateStr}</td>
+                    <td class="py-3 px-4 text-gray-800">${isAnonymous ? 'Anonymous' : donorName}</td>
+                    <td class="py-3 px-4 text-gray-600">${getDonationTypeLabel(donationType)}</td>
+                    <td class="py-3 px-4 text-right font-semibold text-green-600">$${amount}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completed</span>
+                    </td>
+                `;
+                
+                donationsTable.insertBefore(newRow, donationsTable.firstChild);
+
+                // Update donation statistics
+                updateDonationStats(parseFloat(amount));
+
+                // Clear form
+                document.getElementById('donation-type').value = '';
+                document.getElementById('donation-amount').value = '';
+                document.getElementById('donor-name').value = '';
+                document.getElementById('donor-email').value = '';
+                document.getElementById('donor-phone').value = '';
+                document.getElementById('anonymous-donation').checked = false;
+                document.getElementById('recurring-donation').checked = false;
+
+                // Reset amount buttons
+                document.querySelectorAll('.amount-btn').forEach(btn => {
+                    btn.classList.remove('bg-indigo-600', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                });
+
+                showNotification(`Donation of $${amount} processed successfully! ${isRecurring ? 'Monthly recurring donation set up.' : ''}`, 'success');
+            }, 2000);
+        }
+
+        function getDonationTypeLabel(type) {
+            const labels = {
+                'general': 'General Fund',
+                'zakat': 'Zakat',
+                'sadaqah': 'Sadaqah',
+                'building': 'Building Fund',
+                'emergency': 'Emergency Fund',
+                'iftar': 'Iftar Sponsorship',
+                'education': 'Islamic Education'
+            };
+            return labels[type] || type;
+        }
+
+        function updateDonationStats(amount) {
+            // Update today's donations
+            const todayElement = document.getElementById('today-donations');
+            const currentToday = parseFloat(todayElement.textContent.replace(',', ''));
+            todayElement.textContent = (currentToday + amount).toLocaleString();
+
+            // Update monthly donations
+            const monthElement = document.getElementById('month-donations');
+            const currentMonth = parseFloat(monthElement.textContent.replace(',', ''));
+            monthElement.textContent = (currentMonth + amount).toLocaleString();
+
+            // Update total balance
+            const balanceElement = document.getElementById('total-balance');
+            const currentBalance = parseFloat(balanceElement.textContent.replace(',', ''));
+            balanceElement.textContent = (currentBalance + amount).toLocaleString();
+
+            // Update dashboard balance
+            const dashboardBalanceElement = document.getElementById('dashboard-balance');
+            if (dashboardBalanceElement) {
+                dashboardBalanceElement.textContent = (currentBalance + amount).toLocaleString();
+            }
+
+            // Update monthly progress
+            const progressElement = document.getElementById('monthly-progress');
+            const currentProgress = parseFloat(progressElement.textContent.replace(',', ''));
+            progressElement.textContent = (currentProgress + amount).toLocaleString();
+        }
+
+        function filterDonations(period) {
+            const rows = document.querySelectorAll('.donation-row');
+            const buttons = document.querySelectorAll('.donation-filter-btn');
+            
+            // Update button states
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-indigo-600', 'text-white');
+            
+            // Filter rows
+            rows.forEach(row => {
+                if (period === 'all' || row.dataset.period === period || 
+                    (period === 'week' && (row.dataset.period === 'today' || row.dataset.period === 'week'))) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function exportDonorList() {
+            showNotification('Donor list exported successfully!', 'success');
+            
+            // Create a simple CSV export
+            const donorData = [
+                ['Name', 'Email', 'Phone', 'Total Donated', 'Last Donation', 'Type'],
+                ['Ahmad Hassan', 'ahmad@email.com', '+1-555-0123', '$2,500', 'Dec 15, 2024', 'Regular'],
+                ['Fatima Al-Zahra', 'fatima@email.com', '+1-555-0124', '$5,000', 'Dec 14, 2024', 'Major Donor'],
+                ['Omar Abdullah', 'omar@email.com', '+1-555-0125', '$750', 'Dec 13, 2024', 'Regular'],
+                ['Aisha Mohamed', 'aisha@email.com', '+1-555-0126', '$1,200', 'Dec 12, 2024', 'Recurring'],
+                ['Anonymous Donors', 'N/A', 'N/A', '$3,250', 'Various', 'Anonymous']
+            ];
+            
+            const csvContent = donorData.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mosque-donor-list.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+      // Admin Panel Management
+function showAdminTab(tab) {
+    // Hide all admin tab contents
+    document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById('admin-' + tab).classList.remove('hidden');
+
+    // Update tab button states
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+
+    // Activate current tab button
+    const activeBtn = Array.from(document.querySelectorAll('.admin-tab-btn')).find(btn => btn.textContent.toLowerCase().includes(tab));
+    if (activeBtn) {
+        activeBtn.classList.add('bg-indigo-600', 'text-white');
+        activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    }
+}
+
+// ===== USER MANAGEMENT FUNCTIONS =====
+function populateUserTable() {
+    const tbody = document.getElementById('user-management-table');
+    tbody.innerHTML = '';
+    
+    mockDatabase.users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="border border-gray-300 px-4 py-2">${user.username}</td>
+            <td class="border border-gray-300 px-4 py-2">${user.name}</td>
+            <td class="border border-gray-300 px-4 py-2">${user.role}</td>
+            <td class="border border-gray-300 px-4 py-2 text-center">
+                <button onclick="editUser('${user.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded mr-2">Edit</button>
+                <button onclick="deleteUser('${user.username}')" class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function showAddUserForm() {
+    document.getElementById('add-user-form').classList.remove('hidden');
+    // Clear form
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-name').value = '';
+    document.getElementById('new-role').value = 'user';
+    document.getElementById('new-password').value = '';
+}
+
+function hideAddUserForm() {
+    document.getElementById('add-user-form').classList.add('hidden');
+}
+
+function addUser(event) {
+    event.preventDefault();
+    const username = document.getElementById('new-username').value.trim();
+    const name = document.getElementById('new-name').value.trim();
+    const role = document.getElementById('new-role').value;
+    const password = document.getElementById('new-password').value;
+
+    // Validation
+    if (mockDatabase.users.find(u => u.username === username)) {
+        showNotification('Username already exists!', 'error');
+        return;
+    }
+
+    if (password.length < 6) {
+        showNotification('Password must be at least 6 characters long!', 'error');
+        return;
+    }
+
+    // Add user
+    mockDatabase.users.push({ username, name, role, password });
+    populateUserTable();
+    hideAddUserForm();
+    showNotification('User added successfully!', 'success');
+}
+
+function editUser(username) {
+    const user = mockDatabase.users.find(u => u.username === username);
+    if (!user) return;
+
+    // Pre-fill form with user data
+    document.getElementById('new-username').value = user.username;
+    document.getElementById('new-name').value = user.name;
+    document.getElementById('new-role').value = user.role;
+    document.getElementById('new-password').value = user.password;
+    
+    showAddUserForm();
+    
+    // Change form submission to update instead of add
+    const form = document.querySelector('#add-user-form form');
+    form.onsubmit = function(event) {
+        event.preventDefault();
+        updateUser(username);
+    };
+}
+
+function updateUser(originalUsername) {
+    const username = document.getElementById('new-username').value.trim();
+    const name = document.getElementById('new-name').value.trim();
+    const role = document.getElementById('new-role').value;
+    const password = document.getElementById('new-password').value;
+
+    // Find and update user
+    const userIndex = mockDatabase.users.findIndex(u => u.username === originalUsername);
+    if (userIndex !== -1) {
+        mockDatabase.users[userIndex] = { username, name, role, password };
+        populateUserTable();
+        hideAddUserForm();
+        showNotification('User updated successfully!', 'success');
+        
+        // Reset form submission
+        const form = document.querySelector('#add-user-form form');
+        form.onsubmit = addUser;
+    }
+}
+
+function deleteUser(username) {
+    if (username === 'admin') {
+        showNotification('Cannot delete the main admin user!', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to delete user ' + username + '?')) return;
+    
+    mockDatabase.users = mockDatabase.users.filter(u => u.username !== username);
+    populateUserTable();
+    showNotification('User deleted successfully!', 'success');
+}
+
+// ===== CONTENT MANAGEMENT FUNCTIONS =====
+function populateArticleList() {
+    const articleList = document.getElementById('article-list');
+    articleList.innerHTML = '';
+
+    Object.keys(mockDatabase.articles).forEach(articleId => {
+        const article = mockDatabase.articles[articleId];
+        const div = document.createElement('div');
+        div.className = 'border-b border-gray-300 py-3 flex justify-between items-center';
+        div.innerHTML = `
+            <div>
+                <strong class="text-lg">${article.title}</strong>
+                <p class="text-sm text-gray-600">by ${article.author} on ${article.date}</p>
+            </div>
+            <div>
+                <button onclick="editArticle('${articleId}')" class="bg-yellow-500 text-white px-3 py-1 rounded mr-2">Edit</button>
+                <button onclick="deleteArticle('${articleId}')" class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+            </div>
+        `;
+        articleList.appendChild(div);
+    });
+}
+
+function showAddArticleForm() {
+    document.getElementById('add-article-form').classList.remove('hidden');
+    // Clear form
+    document.getElementById('article-title-input').value = '';
+    document.getElementById('article-author-input').value = '';
+    document.getElementById('article-date-input').value = '';
+    document.getElementById('article-content-input').value = '';
+    currentEditingArticle = null;
+}
+
+function hideAddArticleForm() {
+    document.getElementById('add-article-form').classList.add('hidden');
+}
+
+let currentEditingArticle = null;
+
+function saveArticle(event) {
+    event.preventDefault();
+    const title = document.getElementById('article-title-input').value.trim();
+    const author = document.getElementById('article-author-input').value.trim();
+    const date = document.getElementById('article-date-input').value;
+    const content = document.getElementById('article-content-input').value.trim();
+
+    if (!title || !author || !date || !content) {
+        showNotification('Please fill in all fields.', 'error');
+        return;
+    }
+
+    if (currentEditingArticle) {
+        // Update existing article
+        mockDatabase.articles[currentEditingArticle] = { title, author, date, content };
+        showNotification('Article updated successfully!', 'success');
+    } else {
+        // Add new article
+        const id = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        if (mockDatabase.articles[id]) {
+            showNotification('An article with this title already exists. Please choose another title.', 'error');
+            return;
+        }
+        mockDatabase.articles[id] = { title, author, date, content };
+        showNotification('Article added successfully!', 'success');
+    }
+
+    populateArticleList();
+    hideAddArticleForm();
+}
+
+function editArticle(articleId) {
+    const article = mockDatabase.articles[articleId];
+    if (!article) return;
+    
+    document.getElementById('add-article-form').classList.remove('hidden');
+    document.getElementById('article-title-input').value = article.title;
+    document.getElementById('article-author-input').value = article.author;
+    document.getElementById('article-date-input').value = article.date;
+    document.getElementById('article-content-input').value = article.content;
+    currentEditingArticle = articleId;
+}
+
+function deleteArticle(articleId) {
+    if (!confirm('Are you sure you want to delete this article?')) return;
+    
+    delete mockDatabase.articles[articleId];
+    populateArticleList();
+    showNotification('Article deleted successfully!', 'success');
+}
+
+// ===== SYSTEM SETTINGS FUNCTIONS =====
+let maintenanceMode = false;
+
+function toggleMaintenanceMode() {
+    maintenanceMode = !maintenanceMode;
+    const toggleBtn = document.getElementById('maintenance-toggle');
+    const statusText = document.getElementById('maintenance-status');
+
+    if (maintenanceMode) {
+        toggleBtn.textContent = 'Disable Maintenance';
+        toggleBtn.classList.remove('bg-red-600');
+        toggleBtn.classList.add('bg-green-600');
+        statusText.textContent = 'Maintenance mode is currently ON. Users will see a maintenance message.';
+        statusText.classList.add('text-red-600');
+        showNotification('Maintenance mode enabled.', 'warning');
+    } else {
+        toggleBtn.textContent = 'Enable Maintenance';
+        toggleBtn.classList.remove('bg-green-600');
+        toggleBtn.classList.add('bg-red-600');
+        statusText.textContent = 'Maintenance mode is currently off.';
+        statusText.classList.remove('text-red-600');
+        showNotification('Maintenance mode disabled.', 'success');
+    }
+}
+
+function backupData() {
+    showNotification('Creating system backup...', 'info');
+    
+    setTimeout(() => {
+        // Create a backup of the mock database
+        const backupData = {
+            users: mockDatabase.users,
+            articles: mockDatabase.articles,
+            finances: mockDatabase.finances,
+            timestamp: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mosque-backup-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        showNotification('System backup created successfully!', 'success');
+    }, 1500);
+}
+
+function clearCache() {
+    showNotification('Clearing system cache...', 'info');
+    
+    setTimeout(() => {
+        // Simulate cache clearing
+        if (typeof(Storage) !== "undefined") {
+            localStorage.clear();
+        }
+        showNotification('System cache cleared successfully!', 'success');
+    }, 1000);
+}
+
+// ===== ADMIN PANEL INITIALIZATION =====
+function initializeAdminPanel() {
+    populateUserTable();
+    populateArticleList();
+    showAdminTab('users'); // Default to users tab
+}
+
+// Update the existing DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    setTimeout(initializeFinancialChart, 100);
+    
+    // Initialize admin panel when document is ready
+    if (document.getElementById('admin-section')) {
+        initializeAdminPanel();
+    }
+});
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setTimeout(initializeFinancialChart, 100);
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'970910d66444933e',t:'MTc1NTQzMjYwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
