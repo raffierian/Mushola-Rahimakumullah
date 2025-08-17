@@ -1018,7 +1018,7 @@
 
         <div id="admin-section" class="section-content hidden admin-only">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Administrative Panel</h2>
-            <p class="text-gray-600">Admin panel will be implemented in Part 5...</p>
+
         </div>
     </main>
 
@@ -1558,7 +1558,15 @@
             a.click();
             window.URL.revokeObjectURL(url);
         }
-
+//load admin panel
+        function loadAdminPanel() {
+    fetch("admin.html")
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById("admin-section").innerHTML = html;
+      })
+      .catch(error => console.error("Error loading admin page:", error));
+  }
       
 
         // Start the application
