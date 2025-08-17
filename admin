@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masjid Al-Noor - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(180deg, #1e3a8a 0%, #3730a3 100%);
+        }
+        .admin-nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+            transition: all 0.3s ease;
+        }
+        .admin-nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #fbbf24;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .danger-zone {
+            border: 2px dashed #ef4444;
+            background: #fef2f2;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal {
+            backdrop-filter: blur(5px);
+        }
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .table-hover:hover {
+            background-color: #f8fafc;
+        }
+        .action-btn {
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-40">
+        <div class="px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-mosque text-2xl text-indigo-600 mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Masjid Al-Noor</h1>
+                        <p class="text-sm text-gray-600">Admin Panel</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="relative p-2 text-gray-600 hover:text-indigo-600">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border">
+                            <div class="p-4 border-b">
+                                <h3 class="font-semibold text-gray-800">Notifications</h3>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                <div class="p-3 border-b hover:bg-gray-50">
+                                    <p class="text-sm font-medium text-gray-800">New donation received</p>
+                                    <p class="text-xs text-gray-600">$500 from Ahmad Hassan - 2 hours ago</p>
+                                </div>
+                                <div class="p-3 border-b hover:bg-gray-50">
+                                    <p class="text-sm font-medium text-gray-800">System backup completed</p>
+                                    <p class="text-xs text-gray-600">Automatic backup successful - 4 hours ago</p>
+                                </div>
+                                <div class="p-3 hover:bg-gray-50">
+                                    <p class="text-sm font-medium text-gray-800">New user registration</p>
+                                    <p class="text-xs text-gray-600">imam@masjid.org - Yesterday</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%234F46E5'/%3E%3Ctext x='16' y='20' font-family='Arial' font-size='14' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" alt="Admin" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">Administrator</p>
+                            <p class="text-xs text-gray-600">Super Admin</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex">
+        <!-- Admin Sidebar -->
+        <div class="admin-sidebar w-64 min-h-screen p-6 text-white">
+            <nav class="space-y-2">
+                <a href="#" onclick="showAdminTab('dashboard')" class="admin-nav-item active flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="#" onclick="showAdminTab('users')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    User Management
+                </a>
+                <a href="#" onclick="showAdminTab('content')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-edit mr-3"></i>
+                    Content Management
+                </a>
+                <a href="#" onclick="showAdminTab('events')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-calendar mr-3"></i>
+                    Event Management
+                </a>
+                <a href="#" onclick="showAdminTab('financial')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-chart-line mr-3"></i>
+                    Financial Admin
+                </a>
+                <a href="#" onclick="showAdminTab('donations')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-heart mr-3"></i>
+                    Donation Management
+                </a>
+                <a href="#" onclick="showAdminTab('reports')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-file-alt mr-3"></i>
+                    Reports & Analytics
+                </a>
+                <a href="#" onclick="showAdminTab('settings')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    System Settings
+                </a>
+                <a href="#" onclick="showAdminTab('backup')" class="admin-nav-item flex items-center px-4 py-3 rounded-lg text-white">
+                    <i class="fas fa-database mr-3"></i>
+                    Backup & Security
+                </a>
+            </nav>
+        </div>
+
+        <!-- Admin Content Area -->
+        <div class="flex-1 p-6">
+            <!-- Admin Dashboard Tab -->
+            <div id="admin-dashboard" class="admin-tab fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h3>
+                    <p class="text-gray-600">System overview and quick actions</p>
+                </div>
+
+                <!-- Admin Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stats-card text-white p-6 rounded-xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-2">Total Users</h4>
+                                <p class="text-3xl font-bold">12</p>
+                                <p class="text-sm opacity-90">Active accounts</p>
+                            </div>
+                            <i class="fas fa-users text-4xl opacity-80"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-2 text-gray-800">System Health</h4>
+                                <p class="text-3xl font-bold text-green-600">98%</p>
+                                <p class="text-sm text-gray-600">Uptime</p>
+                            </div>
+                            <i class="fas fa-heartbeat text-4xl text-green-600"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-2 text-gray-800">Last Backup</h4>
+                                <p class="text-3xl font-bold text-blue-600">2h</p>
+                                <p class="text-sm text-gray-600">ago</p>
+                            </div>
+                            <i class="fas fa-shield-alt text-4xl text-blue-600"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-2 text-gray-800">Active Sessions</h4>
+                                <p class="text-3xl font-bold text-purple-600">3</p>
+                                <p class="text-sm text-gray-600">Current logins</p>
+                            </div>
+                            <i class="fas fa-user-clock text-4xl text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">Quick Actions</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="createBackup()" class="flex flex-col items-center p-6 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                            <i class="fas fa-database text-3xl text-blue-600 mb-3"></i>
+                            <span class="text-sm font-medium text-gray-800">Create Backup</span>
+                        </button>
+                        <button onclick="showAddUserModal()" class="flex flex-col items-center p-6 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                            <i class="fas fa-user-plus text-3xl text-green-600 mb-3"></i>
+                            <span class="text-sm font-medium text-gray-800">Add User</span>
+                        </button>
+                        <button onclick="viewSystemLogs()" class="flex flex-col items-center p-6 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">
+                            <i class="fas fa-list-alt text-3xl text-yellow-600 mb-3"></i>
+                            <span class="text-sm font-medium text-gray-800">System Logs</span>
+                        </button>
+                        <button onclick="generateReport()" class="flex flex-col items-center p-6 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                            <i class="fas fa-chart-bar text-3xl text-purple-600 mb-3"></i>
+                            <span class="text-sm font-medium text-gray-800">Generate Report</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Analytics Chart -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">System Usage</h4>
+                        <canvas id="usageChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">User Activity</h4>
+                        <canvas id="activityChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Admin Activities -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">Recent Admin Activities</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center p-4 bg-blue-50 rounded-lg">
+                            <i class="fas fa-user-plus text-blue-600 mr-4 text-xl"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800">New user account created</p>
+                                <p class="text-sm text-gray-600">User: treasurer@masjid.org - 1 hour ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                            <i class="fas fa-database text-green-600 mr-4 text-xl"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800">System backup completed</p>
+                                <p class="text-sm text-gray-600">Automatic backup - 2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-yellow-50 rounded-lg">
+                            <i class="fas fa-edit text-yellow-600 mr-4 text-xl"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800">Article published</p>
+                                <p class="text-sm text-gray-600">"Preparing for Ramadan" - 3 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-purple-50 rounded-lg">
+                            <i class="fas fa-cog text-purple-600 mr-4 text-xl"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800">System settings updated</p>
+                                <p class="text-sm text-gray-600">Prayer times configuration - 5 hours ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div id="admin-users" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-2">User Management</h3>
+                            <p class="text-gray-600">Manage user accounts and permissions</p>
+                        </div>
+                        <button onclick="showAddUserModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>Add New User
+                        </button>
+                    </div>
+                </div>
+
+                <!-- User Statistics -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-users text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">12</h4>
+                        <p class="text-gray-600">Total Users</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-user-shield text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">3</h4>
+                        <p class="text-gray-600">Admin Users</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-user-clock text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">8</h4>
+                        <p class="text-gray-600">Active Sessions</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-user-plus text-4xl text-orange-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">2</h4>
+                        <p class="text-gray-600">New This Month</p>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-xl font-bold text-gray-800">User Accounts</h4>
+                        <div class="flex space-x-2">
+                            <input type="text" placeholder="Search users..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                <option>All Roles</option>
+                                <option>Admin</option>
+                                <option>Treasurer</option>
+                                <option>Imam</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Name</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Username</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Role</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Last Login</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Status</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table">
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center">
+                                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%234F46E5'/%3E%3Ctext x='20' y='25' font-family='Arial' font-size='16' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" alt="Admin" class="w-10 h-10 rounded-full mr-3">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Administrator</p>
+                                                <p class="text-sm text-gray-600">admin@masjid.org</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">admin</td>
+                                    <td class="py-4 px-4">
+                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Super Admin</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">Dec 15, 2024 - 2:30 PM</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Active</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button onclick="editUser('admin')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button onclick="toggleUserStatus('admin')" class="action-btn text-yellow-600 hover:text-yellow-800 mr-3 p-2">
+                                            <i class="fas fa-ban text-lg"></i>
+                                        </button>
+                                        <button onclick="deleteUser('admin')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center">
+                                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%2310B981'/%3E%3Ctext x='20' y='25' font-family='Arial' font-size='16' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E" alt="Treasurer" class="w-10 h-10 rounded-full mr-3">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Ahmad Hassan</p>
+                                                <p class="text-sm text-gray-600">treasurer@masjid.org</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">treasurer</td>
+                                    <td class="py-4 px-4">
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Treasurer</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">Dec 14, 2024 - 5:15 PM</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Active</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button onclick="editUser('treasurer')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button onclick="toggleUserStatus('treasurer')" class="action-btn text-yellow-600 hover:text-yellow-800 mr-3 p-2">
+                                            <i class="fas fa-ban text-lg"></i>
+                                        </button>
+                                        <button onclick="deleteUser('treasurer')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center">
+                                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%237C3AED'/%3E%3Ctext x='20' y='25' font-family='Arial' font-size='16' fill='white' text-anchor='middle'%3EI%3C/text%3E%3C/svg%3E" alt="Imam" class="w-10 h-10 rounded-full mr-3">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Imam Ahmad</p>
+                                                <p class="text-sm text-gray-600">imam@masjid.org</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">imam</td>
+                                    <td class="py-4 px-4">
+                                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Imam</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">Dec 13, 2024 - 8:20 AM</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Active</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button onclick="editUser('imam')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button onclick="toggleUserStatus('imam')" class="action-btn text-yellow-600 hover:text-yellow-800 mr-3 p-2">
+                                            <i class="fas fa-ban text-lg"></i>
+                                        </button>
+                                        <button onclick="deleteUser('imam')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Management Tab -->
+            <div id="admin-content" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-2">Content Management</h3>
+                            <p class="text-gray-600">Manage articles, announcements, and website content</p>
+                        </div>
+                        <button onclick="showAddArticleModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>New Article
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-newspaper text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">15</h4>
+                        <p class="text-gray-600">Published Articles</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-bullhorn text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">3</h4>
+                        <p class="text-gray-600">Active Announcements</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-eye text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">1,247</h4>
+                        <p class="text-gray-600">Total Views</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-edit text-4xl text-orange-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">2</h4>
+                        <p class="text-gray-600">Draft Articles</p>
+                    </div>
+                </div>
+
+                <!-- Content Management Tabs -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex border-b border-gray-200 mb-6">
+                        <button onclick="showContentTab('articles')" class="content-tab-btn active px-6 py-3 border-b-2 border-indigo-600 text-indigo-600 font-medium">Articles</button>
+                        <button onclick="showContentTab('announcements')" class="content-tab-btn px-6 py-3 text-gray-600 font-medium ml-4">Announcements</button>
+                        <button onclick="showContentTab('pages')" class="content-tab-btn px-6 py-3 text-gray-600 font-medium ml-4">Pages</button>
+                    </div>
+
+                    <!-- Articles Tab -->
+                    <div id="content-articles" class="content-tab">
+                        <div class="mb-4 flex justify-between items-center">
+                            <div class="flex space-x-2">
+                                <input type="text" placeholder="Search articles..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                    <option>All Status</option>
+                                    <option>Published</option>
+                                    <option>Draft</option>
+                                    <option>Archived</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left py-4 px-4 font-semibold text-gray-700">Title</th>
+                                        <th class="text-left py-4 px-4 font-semibold text-gray-700">Author</th>
+                                        <th class="text-left py-4 px-4 font-semibold text-gray-700">Date</th>
+                                        <th class="text-center py-4 px-4 font-semibold text-gray-700">Status</th>
+                                        <th class="text-center py-4 px-4 font-semibold text-gray-700">Views</th>
+                                        <th class="text-center py-4 px-4 font-semibold text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-100 table-hover">
+                                        <td class="py-4 px-4">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Preparing for Ramadan: A Community Guide</p>
+                                                <p class="text-sm text-gray-600">Essential tips and spiritual preparation...</p>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4 text-gray-600">Imam Ahmad</td>
+                                        <td class="py-4 px-4 text-gray-600">Dec 10, 2024</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Published</span>
+                                        </td>
+                                        <td class="py-4 px-4 text-center text-gray-600 font-medium">342</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <button onclick="editArticle('ramadan-prep')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                                <i class="fas fa-edit text-lg"></i>
+                                            </button>
+                                            <button onclick="viewArticle('ramadan-prep')" class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                                <i class="fas fa-eye text-lg"></i>
+                                            </button>
+                                            <button onclick="deleteArticle('ramadan-prep')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                                <i class="fas fa-trash text-lg"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 table-hover">
+                                        <td class="py-4 px-4">
+                                            <div>
+                                                <p class="font-medium text-gray-800">The Importance of Charity in Islam</p>
+                                                <p class="text-sm text-gray-600">Understanding Zakat, Sadaqah, and their impact...</p>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4 text-gray-600">Dr. Fatima</td>
+                                        <td class="py-4 px-4 text-gray-600">Dec 8, 2024</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Published</span>
+                                        </td>
+                                        <td class="py-4 px-4 text-center text-gray-600 font-medium">289</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <button onclick="editArticle('charity-importance')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                                <i class="fas fa-edit text-lg"></i>
+                                            </button>
+                                            <button onclick="viewArticle('charity-importance')" class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                                <i class="fas fa-eye text-lg"></i>
+                                            </button>
+                                            <button onclick="deleteArticle('charity-importance')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                                <i class="fas fa-trash text-lg"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 table-hover">
+                                        <td class="py-4 px-4">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Youth Programs: Building Tomorrow's Leaders</p>
+                                                <p class="text-sm text-gray-600">Exciting new initiatives for our young community...</p>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4 text-gray-600">Brother Omar</td>
+                                        <td class="py-4 px-4 text-gray-600">Dec 5, 2024</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">Draft</span>
+                                        </td>
+                                        <td class="py-4 px-4 text-center text-gray-600 font-medium">-</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <button onclick="editArticle('youth-programs')" class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                                <i class="fas fa-edit text-lg"></i>
+                                            </button>
+                                            <button onclick="publishArticle('youth-programs')" class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                                <i class="fas fa-upload text-lg"></i>
+                                            </button>
+                                            <button onclick="deleteArticle('youth-programs')" class="action-btn text-red-600 hover:text-red-800 p-2">
+                                                <i class="fas fa-trash text-lg"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Announcements Tab -->
+                    <div id="content-announcements" class="content-tab hidden">
+                        <div class="mb-4">
+                            <button onclick="showAddAnnouncementModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>New Announcement
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 rounded-lg p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex-1">
+                                        <h5 class="text-lg font-semibold text-gray-800 mb-2">Ramadan preparation meeting this Friday</h5>
+                                        <p class="text-gray-600 mb-3">All community members welcome after Maghrib prayer. We will discuss Iftar arrangements, Tarawih schedule, and volunteer opportunities.</p>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full mr-3">Active</span>
+                                            <span>Created: Dec 10, 2024 by Imam Ahmad</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex-1">
+                                        <h5 class="text-lg font-semibold text-gray-800 mb-2">New Wudu Facilities Now Open</h5>
+                                        <p class="text-gray-600 mb-3">The renovation of our wudu facilities has been completed. The new facilities include improved accessibility features and energy-efficient fixtures.</p>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mr-3">Archived</span>
+                                            <span>Created: Dec 5, 2024 by Administrator</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pages Tab -->
+                    <div id="content-pages" class="content-tab hidden">
+                        <div class="text-center py-12">
+                            <i class="fas fa-file-alt text-6xl text-gray-400 mb-6"></i>
+                            <h4 class="text-xl font-semibold text-gray-600 mb-2">Static Page Management</h4>
+                            <p class="text-gray-500">Coming soon - Manage static pages like About Us, Contact, etc.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Management Tab -->
+            <div id="admin-events" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-2">Event Management</h3>
+                            <p class="text-gray-600">Schedule and manage mosque events and programs</p>
+                        </div>
+                        <button onclick="showAddEventModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>New Event
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Event Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-calendar-alt text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">12</h4>
+                        <p class="text-gray-600">Upcoming Events</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-users text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">485</h4>
+                        <p class="text-gray-600">Total Attendees</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-clock text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">5</h4>
+                        <p class="text-gray-600">This Week</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-check-circle text-4xl text-orange-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">28</h4>
+                        <p class="text-gray-600">Completed</p>
+                    </div>
+                </div>
+
+                <!-- Event Calendar and List -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Mini Calendar -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Event Calendar</h4>
+                        <div class="grid grid-cols-7 gap-2 mb-4">
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Sun</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Mon</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Tue</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Wed</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Thu</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Fri</div>
+                            <div class="text-center font-semibold text-gray-600 py-2 text-sm">Sat</div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-2">
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">1</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">2</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">3</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">4</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">5</div>
+                            <div class="aspect-square border border-blue-300 bg-blue-100 p-2 text-center text-sm cursor-pointer">
+                                6
+                                <div class="text-xs text-blue-800 mt-1">Khutbah</div>
+                            </div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">7</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">8</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">9</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">10</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">11</div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">12</div>
+                            <div class="aspect-square border border-green-300 bg-green-100 p-2 text-center text-sm cursor-pointer">
+                                13
+                                <div class="text-xs text-green-800 mt-1">Meeting</div>
+                            </div>
+                            <div class="aspect-square border border-gray-200 p-2 text-center text-sm hover:bg-gray-50 cursor-pointer">14</div>
+                        </div>
+                    </div>
+
+                    <!-- Event Types -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Event Categories</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-pray text-blue-600 mr-3 text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Religious Events</p>
+                                        <p class="text-sm text-gray-600">Khutbah, Prayers, Religious ceremonies</p>
+                                    </div>
+                                </div>
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">8</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-graduation-cap text-green-600 mr-3 text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Educational</p>
+                                        <p class="text-sm text-gray-600">Study circles, Classes, Workshops</p>
+                                    </div>
+                                </div>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">5</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-users text-purple-600 mr-3 text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Community</p>
+                                        <p class="text-sm text-gray-600">Social gatherings, Meetings, Fundraisers</p>
+                                    </div>
+                                </div>
+                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">3</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-heart text-orange-600 mr-3 text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Charity</p>
+                                        <p class="text-sm text-gray-600">Food drives, Volunteer work, Donations</p>
+                                    </div>
+                                </div>
+                                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Events List -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-xl font-bold text-gray-800">Upcoming Events</h4>
+                        <div class="flex space-x-2">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                <option>All Categories</option>
+                                <option>Religious</option>
+                                <option>Educational</option>
+                                <option>Community</option>
+                                <option>Charity</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 rounded-lg p-6 table-hover">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h5 class="text-lg font-semibold text-gray-800 mr-3">Friday Khutbah</h5>
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Religious</span>
+                                    </div>
+                                    <p class="text-gray-600 mb-3">Topic: "Patience in Times of Trial" - Weekly Friday sermon and congregational prayer</p>
+                                    <div class="flex items-center text-sm text-gray-500 space-x-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Every Friday, 1:00 PM</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>Main Prayer Hall</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>~200 attendees</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button class="action-btn text-blue-600 hover:text-blue-800 p-2">
+                                        <i class="fas fa-edit text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-green-600 hover:text-green-800 p-2">
+                                        <i class="fas fa-eye text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                        <i class="fas fa-trash text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-gray-200 rounded-lg p-6 table-hover">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h5 class="text-lg font-semibold text-gray-800 mr-3">Community Iftar Planning</h5>
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Community</span>
+                                    </div>
+                                    <p class="text-gray-600 mb-3">Planning session for Ramadan community iftars and volunteer coordination</p>
+                                    <div class="flex items-center text-sm text-gray-500 space-x-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Dec 18, 2024, 7:30 PM</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>Community Room</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>~30 attendees</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button class="action-btn text-blue-600 hover:text-blue-800 p-2">
+                                        <i class="fas fa-edit text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-green-600 hover:text-green-800 p-2">
+                                        <i class="fas fa-eye text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                        <i class="fas fa-trash text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-gray-200 rounded-lg p-6 table-hover">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h5 class="text-lg font-semibold text-gray-800 mr-3">Islamic History Study Circle</h5>
+                                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Educational</span>
+                                    </div>
+                                    <p class="text-gray-600 mb-3">The Golden Age of Islamic Civilization - Weekly educational session</p>
+                                    <div class="flex items-center text-sm text-gray-500 space-x-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Dec 20, 2024, 6:00 PM</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>Library</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>~15 attendees</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button class="action-btn text-blue-600 hover:text-blue-800 p-2">
+                                        <i class="fas fa-edit text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-green-600 hover:text-green-800 p-2">
+                                        <i class="fas fa-eye text-lg"></i>
+                                    </button>
+                                    <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                        <i class="fas fa-trash text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Admin Tab -->
+            <div id="admin-financial" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Financial Administration</h3>
+                    <p class="text-gray-600">Manage financial records, transactions, and budgets</p>
+                </div>
+
+                <!-- Financial Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-wallet text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$45,230</h4>
+                        <p class="text-gray-600">Total Balance</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-arrow-up text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$12,450</h4>
+                        <p class="text-gray-600">Monthly Income</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-arrow-down text-4xl text-red-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$8,750</h4>
+                        <p class="text-gray-600">Monthly Expenses</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-chart-line text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$3,700</h4>
+                        <p class="text-gray-600">Net Income</p>
+                    </div>
+                </div>
+
+                <!-- Financial Admin Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-plus-circle text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Add Transaction</h4>
+                        <p class="text-sm text-gray-600 mb-4">Record new income or expense</p>
+                        <button onclick="showAddTransactionModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Add Transaction
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-chart-pie text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Budget Planning</h4>
+                        <p class="text-sm text-gray-600 mb-4">Set and manage budgets</p>
+                        <button onclick="showBudgetModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Manage Budget
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-file-export text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Export Data</h4>
+                        <p class="text-sm text-gray-600 mb-4">Generate financial reports</p>
+                        <button onclick="exportFinancialData()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Export Reports
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Management -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-xl font-bold text-gray-800">Transaction Management</h4>
+                        <div class="flex space-x-2">
+                            <input type="text" placeholder="Search transactions..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                <option>All Types</option>
+                                <option>Income</option>
+                                <option>Expense</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Date</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Description</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Category</th>
+                                    <th class="text-right py-4 px-4 font-semibold text-gray-700">Amount</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 15, 2024</td>
+                                    <td class="py-4 px-4 text-gray-800">Friday Collection</td>
+                                    <td class="py-4 px-4 text-gray-600">General Donation</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-green-600">+$1,250</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 14, 2024</td>
+                                    <td class="py-4 px-4 text-gray-800">Electricity Bill</td>
+                                    <td class="py-4 px-4 text-gray-600">Utilities</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-red-600">-$320</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 13, 2024</td>
+                                    <td class="py-4 px-4 text-gray-800">Zakat Collection</td>
+                                    <td class="py-4 px-4 text-gray-600">Zakat</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-green-600">+$2,500</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donation Management Tab -->
+            <div id="admin-donations" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Donation Management</h3>
+                    <p class="text-gray-600">Monitor and manage all donation activities</p>
+                </div>
+
+                <!-- Donation Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-hand-holding-heart text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$1,250</h4>
+                        <p class="text-gray-600">Today's Donations</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-calendar-alt text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$12,450</h4>
+                        <p class="text-gray-600">This Month</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-users text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">247</h4>
+                        <p class="text-gray-600">Total Donors</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-chart-bar text-4xl text-orange-600 mb-4"></i>
+                        <h4 class="text-3xl font-bold text-gray-800">$85</h4>
+                        <p class="text-gray-600">Avg. Donation</p>
+                    </div>
+                </div>
+
+                <!-- Donation Management Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-download text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Export Donor List</h4>
+                        <p class="text-sm text-gray-600 mb-4">Download complete donor database</p>
+                        <button onclick="exportDonorList()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Export Data
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-bullseye text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Campaign Goals</h4>
+                        <p class="text-sm text-gray-600 mb-4">Set and manage fundraising targets</p>
+                        <button onclick="manageCampaigns()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Manage Goals
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-envelope text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Donor Communications</h4>
+                        <p class="text-sm text-gray-600 mb-4">Send thank you messages and updates</p>
+                        <button onclick="sendDonorEmails()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium">
+                            Send Messages
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Donations -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-xl font-bold text-gray-800">Recent Donations</h4>
+                        <div class="flex space-x-2">
+                            <input type="text" placeholder="Search donations..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                <option>All Types</option>
+                                <option>General Fund</option>
+                                <option>Zakat</option>
+                                <option>Building Fund</option>
+                                <option>Emergency Fund</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Date</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Donor</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Type</th>
+                                    <th class="text-right py-4 px-4 font-semibold text-gray-700">Amount</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Status</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 15, 2024 - 2:30 PM</td>
+                                    <td class="py-4 px-4">
+                                        <div>
+                                            <p class="font-medium text-gray-800">Ahmad Hassan</p>
+                                            <p class="text-sm text-gray-600">ahmad.hassan@email.com</p>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">General Fund</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-green-600">$500</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Completed</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-eye text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                            <i class="fas fa-envelope text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-purple-600 hover:text-purple-800 p-2">
+                                            <i class="fas fa-receipt text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 15, 2024 - 11:15 AM</td>
+                                    <td class="py-4 px-4">
+                                        <div>
+                                            <p class="font-medium text-gray-800">Anonymous</p>
+                                            <p class="text-sm text-gray-600">-</p>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">Zakat</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-green-600">$250</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Completed</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-eye text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-purple-600 hover:text-purple-800 p-2">
+                                            <i class="fas fa-receipt text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 14, 2024 - 6:45 PM</td>
+                                    <td class="py-4 px-4">
+                                        <div>
+                                            <p class="font-medium text-gray-800">Fatima Al-Zahra</p>
+                                            <p class="text-sm text-gray-600">fatima.zahra@email.com</p>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-gray-600">Building Fund</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-green-600">$1,000</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Completed</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-eye text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                            <i class="fas fa-envelope text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-purple-600 hover:text-purple-800 p-2">
+                                            <i class="fas fa-receipt text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports & Analytics Tab -->
+            <div id="admin-reports" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Reports & Analytics</h3>
+                    <p class="text-gray-600">Generate comprehensive reports and view system analytics</p>
+                </div>
+
+                <!-- Report Generation -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Financial Reports</h4>
+                        <div class="space-y-4">
+                            <button onclick="generateFinancialReport('monthly')" class="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-line text-blue-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">Monthly Financial Report</span>
+                                </div>
+                                <i class="fas fa-download text-blue-600"></i>
+                            </button>
+                            <button onclick="generateFinancialReport('yearly')" class="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-bar text-green-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">Annual Financial Report</span>
+                                </div>
+                                <i class="fas fa-download text-green-600"></i>
+                            </button>
+                            <button onclick="generateFinancialReport('donations')" class="w-full flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-heart text-purple-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">Donation Summary Report</span>
+                                </div>
+                                <i class="fas fa-download text-purple-600"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">System Reports</h4>
+                        <div class="space-y-4">
+                            <button onclick="generateSystemReport('users')" class="w-full flex items-center justify-between p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-users text-orange-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">User Activity Report</span>
+                                </div>
+                                <i class="fas fa-download text-orange-600"></i>
+                            </button>
+                            <button onclick="generateSystemReport('events')" class="w-full flex items-center justify-between p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar text-indigo-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">Event Attendance Report</span>
+                                </div>
+                                <i class="fas fa-download text-indigo-600"></i>
+                            </button>
+                            <button onclick="generateSystemReport('content')" class="w-full flex items-center justify-between p-4 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-newspaper text-pink-600 mr-4 text-xl"></i>
+                                    <span class="font-medium text-gray-800">Content Analytics Report</span>
+                                </div>
+                                <i class="fas fa-download text-pink-600"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Dashboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">Monthly Trends</h4>
+                        <canvas id="trendsChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">Donation Sources</h4>
+                        <canvas id="donationChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">Recent Reports</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center p-6 bg-gray-50 rounded-lg">
+                            <i class="fas fa-file-pdf text-4xl text-red-600 mb-4"></i>
+                            <h5 class="font-semibold text-gray-800 mb-2">November 2024 Financial Report</h5>
+                            <p class="text-sm text-gray-600 mb-4">Complete monthly financial summary</p>
+                            <button class="text-indigo-600 hover:text-indigo-800 font-medium">Download PDF</button>
+                        </div>
+
+                        <div class="text-center p-6 bg-gray-50 rounded-lg">
+                            <i class="fas fa-file-excel text-4xl text-green-600 mb-4"></i>
+                            <h5 class="font-semibold text-gray-800 mb-2">Donor Database Export</h5>
+                            <p class="text-sm text-gray-600 mb-4">Complete donor list with contact info</p>
+                            <button class="text-indigo-600 hover:text-indigo-800 font-medium">Download Excel</button>
+                        </div>
+
+                        <div class="text-center p-6 bg-gray-50 rounded-lg">
+                            <i class="fas fa-file-chart-line text-4xl text-blue-600 mb-4"></i>
+                            <h5 class="font-semibold text-gray-800 mb-2">Q4 Analytics Report</h5>
+                            <p class="text-sm text-gray-600 mb-4">Quarterly performance analysis</p>
+                            <button class="text-indigo-600 hover:text-indigo-800 font-medium">Download Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Settings Tab -->
+            <div id="admin-settings" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">System Settings</h3>
+                    <p class="text-gray-600">Configure system preferences and mosque information</p>
+                </div>
+
+                <!-- Settings Categories -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- General Settings -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">General Settings</h4>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Mosque Name</label>
+                                <input type="text" value="Masjid Al-Noor" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Address</label>
+                                <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" rows="3">123 Islamic Center Drive
+City, State 12345
+United States</textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+                                    <input type="tel" value="(555) 123-4567" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                                    <input type="email" value="info@masjidalnoor.org" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                                Save General Settings
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Prayer Times Settings -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Prayer Times Configuration</h4>
+                        <form class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Fajr</label>
+                                    <input type="time" value="05:30" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Fajr Iqamah</label>
+                                    <input type="time" value="05:45" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Dhuhr</label>
+                                    <input type="time" value="12:45" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Dhuhr Iqamah</label>
+                                    <input type="time" value="13:00" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Asr</label>
+                                    <input type="time" value="16:15" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Asr Iqamah</label>
+                                    <input type="time" value="16:30" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Maghrib</label>
+                                    <input type="time" value="18:45" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Maghrib Iqamah</label>
+                                    <input type="time" value="18:50" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Isha</label>
+                                    <input type="time" value="20:30" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Isha Iqamah</label>
+                                    <input type="time" value="20:45" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium">
+                                Update Prayer Times
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Notification Settings</h4>
+                        <form class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-gray-800">Email Notifications</p>
+                                    <p class="text-sm text-gray-600">Receive email alerts for important events</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-gray-800">Donation Alerts</p>
+                                    <p class="text-sm text-gray-600">Get notified of new donations</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-gray-800">System Alerts</p>
+                                    <p class="text-sm text-gray-600">Receive system maintenance notifications</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium">
+                                Save Notification Settings
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Security Settings</h4>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Session Timeout (minutes)</label>
+                                <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                                    <option>30</option>
+                                    <option selected>60</option>
+                                    <option>120</option>
+                                    <option>240</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-gray-800">Two-Factor Authentication</p>
+                                    <p class="text-sm text-gray-600">Require 2FA for admin accounts</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-gray-800">Login Attempt Logging</p>
+                                    <p class="text-sm text-gray-600">Log all login attempts</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium">
+                                Update Security Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup & Security Tab -->
+            <div id="admin-backup" class="admin-tab hidden fade-in">
+                <div class="mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Backup & Security</h3>
+                    <p class="text-gray-600">Manage system backups, security, and data protection</p>
+                </div>
+
+                <!-- Backup Status -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-shield-alt text-4xl text-green-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Last Backup</h4>
+                        <p class="text-2xl font-bold text-green-600">2h ago</p>
+                        <p class="text-sm text-gray-600">Successful</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-database text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Backup Size</h4>
+                        <p class="text-2xl font-bold text-blue-600">2.4 GB</p>
+                        <p class="text-sm text-gray-600">Total data</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <i class="fas fa-clock text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Next Backup</h4>
+                        <p class="text-2xl font-bold text-purple-600">22h</p>
+                        <p class="text-sm text-gray-600">Scheduled</p>
+                    </div>
+                </div>
+
+                <!-- Backup Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Backup Management</h4>
+                        <div class="space-y-4">
+                            <button onclick="createManualBackup()" class="w-full flex items-center justify-center p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors">
+                                <i class="fas fa-plus-circle text-green-600 mr-3 text-xl"></i>
+                                <span class="font-medium text-gray-800">Create Manual Backup</span>
+                            </button>
+                            <button onclick="scheduleBackup()" class="w-full flex items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors">
+                                <i class="fas fa-calendar-alt text-blue-600 mr-3 text-xl"></i>
+                                <span class="font-medium text-gray-800">Schedule Automatic Backup</span>
+                            </button>
+                            <button onclick="restoreBackup()" class="w-full flex items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg transition-colors">
+                                <i class="fas fa-undo text-orange-600 mr-3 text-xl"></i>
+                                <span class="font-medium text-gray-800">Restore from Backup</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">Security Monitoring</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-800">System Integrity</p>
+                                    <p class="text-sm text-gray-600">All files verified</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Secure</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-800">Failed Login Attempts</p>
+                                    <p class="text-sm text-gray-600">Last 24 hours</p>
+                                </div>
+                                <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">2 attempts</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-800">SSL Certificate</p>
+                                    <p class="text-sm text-gray-600">Expires in 89 days</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Valid</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup History -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">Backup History</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Date</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Type</th>
+                                    <th class="text-left py-4 px-4 font-semibold text-gray-700">Size</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Status</th>
+                                    <th class="text-center py-4 px-4 font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 15, 2024 - 2:00 AM</td>
+                                    <td class="py-4 px-4 text-gray-800">Automatic</td>
+                                    <td class="py-4 px-4 text-gray-600">2.4 GB</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Success</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-download text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                            <i class="fas fa-undo text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 14, 2024 - 2:00 AM</td>
+                                    <td class="py-4 px-4 text-gray-800">Automatic</td>
+                                    <td class="py-4 px-4 text-gray-600">2.3 GB</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Success</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-download text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                            <i class="fas fa-undo text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-100 table-hover">
+                                    <td class="py-4 px-4 text-gray-600">Dec 13, 2024 - 10:30 AM</td>
+                                    <td class="py-4 px-4 text-gray-800">Manual</td>
+                                    <td class="py-4 px-4 text-gray-600">2.2 GB</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Success</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="action-btn text-blue-600 hover:text-blue-800 mr-3 p-2">
+                                            <i class="fas fa-download text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-green-600 hover:text-green-800 mr-3 p-2">
+                                            <i class="fas fa-undo text-lg"></i>
+                                        </button>
+                                        <button class="action-btn text-red-600 hover:text-red-800 p-2">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="danger-zone rounded-xl p-6">
+                    <h4 class="text-xl font-bold text-red-800 mb-4">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Danger Zone
+                    </h4>
+                    <p class="text-red-700 mb-6">These actions are irreversible and can cause data loss. Proceed with extreme caution.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="resetSystem()" class="flex items-center justify-center p-4 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg transition-colors">
+                            <i class="fas fa-refresh text-red-600 mr-3"></i>
+                            <span class="font-medium text-red-800">Reset System Settings</span>
+                        </button>
+                        <button onclick="purgeOldData()" class="flex items-center justify-center p-4 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg transition-colors">
+                            <i class="fas fa-trash-alt text-red-600 mr-3"></i>
+                            <span class="font-medium text-red-800">Purge Old Data</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Add New User</h3>
+                <button onclick="closeModal('addUserModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter full name">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter email address">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                        <option>Select Role</option>
+                        <option>Admin</option>
+                        <option>Treasurer</option>
+                        <option>Imam</option>
+                        <option>Volunteer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Temporary Password</label>
+                    <input type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter temporary password">
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="button" onclick="closeModal('addUserModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" onclick="addUser()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                        Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Article Modal -->
+    <div id="addArticleModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Create New Article</h3>
+                <button onclick="closeModal('addArticleModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Article Title</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter article title">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                        <option>Select Category</option>
+                        <option>Islamic Education</option>
+                        <option>Community News</option>
+                        <option>Events</option>
+                        <option>Announcements</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Content</label>
+                    <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" rows="8" placeholder="Write your article content here..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Status</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                        <option>Draft</option>
+                        <option>Published</option>
+                        <option>Scheduled</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="button" onclick="closeModal('addArticleModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" onclick="addArticle()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                        Create Article
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Create New Event</h3>
+                <button onclick="closeModal('addEventModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Event Title</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter event title">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Date</label>
+                        <input type="date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Time</label>
+                        <input type="time" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Location</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter event location">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                        <option>Select Category</option>
+                        <option>Religious</option>
+                        <option>Educational</option>
+                        <option>Community</option>
+                        <option>Charity</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                    <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" rows="4" placeholder="Enter event description"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Expected Attendees</label>
+                    <input type="number" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter expected number of attendees">
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="button" onclick="closeModal('addEventModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" onclick="addEvent()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                        Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg hidden z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-3"></i>
+            <span id="notification-message">Action completed successfully!</span>
+        </div>
+    </div>
+
+    <script>
+        // Admin Panel JavaScript Functions
+        let currentAdminTab = 'dashboard';
+        let currentContentTab = 'articles';
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+        });
+
+        // Show admin tab
+        function showAdminTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Show selected tab
+            document.getElementById('admin-' + tabName).classList.remove('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.admin-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            currentAdminTab = tabName;
+        }
+
+        // Show content tab
+        function showContentTab(tabName) {
+            // Hide all content tabs
+            document.querySelectorAll('.content-tab').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Show selected content tab
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            
+            // Update content tab buttons
+            document.querySelectorAll('.content-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
+                btn.classList.add('text-gray-600');
+            });
+            event.target.classList.add('active', 'border-indigo-600', 'text-indigo-600');
+            event.target.classList.remove('text-gray-600');
+            
+            currentContentTab = tabName;
+        }
+
+        // Toggle notifications dropdown
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notifications-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notifications-dropdown');
+            const button = event.target.closest('button');
+            
+            if (!button || !button.onclick || button.onclick.toString().indexOf('toggleNotifications') === -1) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Modal functions
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+        }
+
+        function showAddArticleModal() {
+            document.getElementById('addArticleModal').classList.remove('hidden');
+        }
+
+        function showAddEventModal() {
+            document.getElementById('addEventModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageEl = document.getElementById('notification-message');
+            
+            messageEl.textContent = message;
+            
+            // Set color based on type
+            notification.className = `notification fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50`;
+            if (type === 'success') {
+                notification.classList.add('bg-green-500', 'text-white');
+            } else if (type === 'error') {
+                notification.classList.add('bg-red-500', 'text-white');
+            } else if (type === 'warning') {
+                notification.classList.add('bg-yellow-500', 'text-white');
+            }
+            
+            notification.classList.remove('hidden');
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Admin action functions
+        function createBackup() {
+            showNotification('Manual backup started successfully!');
+        }
+
+        function viewSystemLogs() {
+            showNotification('Opening system logs...');
+        }
+
+        function generateReport() {
+            showNotification('Generating comprehensive report...');
+        }
+
+        function addUser() {
+            event.preventDefault();
+            closeModal('addUserModal');
+            showNotification('New user account created successfully!');
+        }
+
+        function editUser(username) {
+            showNotification(`Editing user: ${username}`);
+        }
+
+        function toggleUserStatus(username) {
+            showNotification(`User status updated for: ${username}`);
+        }
+
+        function deleteUser(username) {
+            if (confirm(`Are you sure you want to delete user: ${username}?`)) {
+                showNotification(`User ${username} deleted successfully!`);
+            }
+        }
+
+        function addArticle() {
+            event.preventDefault();
+            closeModal('addArticleModal');
+            showNotification('Article created successfully!');
+        }
+
+        function editArticle(articleId) {
+            showNotification(`Editing article: ${articleId}`);
+        }
+
+        function viewArticle(articleId) {
+            showNotification(`Viewing article: ${articleId}`);
+        }
+
+        function publishArticle(articleId) {
+            showNotification(`Article published: ${articleId}`);
+        }
+
+        function deleteArticle(articleId) {
+            if (confirm('Are you sure you want to delete this article?')) {
+                showNotification('Article deleted successfully!');
+            }
+        }
+
+        function addEvent() {
+            event.preventDefault();
+            closeModal('addEventModal');
+            showNotification('Event created successfully!');
+        }
+
+        function showAddTransactionModal() {
+            showNotification('Opening transaction form...');
+        }
+
+        function showBudgetModal() {
+            showNotification('Opening budget management...');
+        }
+
+        function exportFinancialData() {
+            showNotification('Exporting financial data...');
+        }
+
+        function exportDonorList() {
+            showNotification('Exporting donor database...');
+        }
+
+        function manageCampaigns() {
+            showNotification('Opening campaign management...');
+        }
+
+        function sendDonorEmails() {
+            showNotification('Opening donor communication panel...');
+        }
+
+        function generateFinancialReport(type) {
+            showNotification(`Generating ${type} financial report...`);
+        }
+
+        function generateSystemReport(type) {
+            showNotification(`Generating ${type} system report...`);
+        }
+
+        function createManualBackup() {
+            showNotification('Creating manual backup...');
+        }
+
+        function scheduleBackup() {
+            showNotification('Opening backup scheduler...');
+        }
+
+        function restoreBackup() {
+            if (confirm('Are you sure you want to restore from backup? This will overwrite current data.')) {
+                showNotification('Backup restoration started...');
+            }
+        }
+
+        function resetSystem() {
+            if (confirm('WARNING: This will reset all system settings to default. Are you sure?')) {
+                showNotification('System settings reset initiated...', 'warning');
+            }
+        }
+
+        function purgeOldData() {
+            if (confirm('WARNING: This will permanently delete old data. This action cannot be undone. Are you sure?')) {
+                showNotification('Data purge initiated...', 'warning');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                showNotification('Logging out...');
+                // Simulate logout redirect
+                setTimeout(() => {
+                    window.location.href = '#';
+                }, 1000);
+            }
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Usage Chart
+            const usageCtx = document.getElementById('usageChart');
+            if (usageCtx) {
+                new Chart(usageCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'System Usage',
+                            data: [65, 78, 85, 92, 88, 95],
+                            borderColor: 'rgb(79, 70, 229)',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart');
+            if (activityCtx) {
+                new Chart(activityCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Active Users', 'Inactive Users', 'New Users'],
+                        datasets: [{
+                            data: [8, 2, 2],
+                            backgroundColor: [
+                                'rgb(34, 197, 94)',
+                                'rgb(239, 68, 68)',
+                                'rgb(168, 85, 247)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Trends Chart
+            const trendsCtx = document.getElementById('trendsChart');
+            if (trendsCtx) {
+                new Chart(trendsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [{
+                            label: 'Income',
+                            data: [12000, 15000, 13500, 16000, 14500, 12450],
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)'
+                        }, {
+                            label: 'Expenses',
+                            data: [8000, 9500, 8200, 10000, 9200, 8750],
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Donation Chart
+            const donationCtx = document.getElementById('donationChart');
+            if (donationCtx) {
+                new Chart(donationCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['General Fund', 'Zakat', 'Building Fund', 'Emergency Fund'],
+                        datasets: [{
+                            data: [45, 25, 20, 10],
+                            backgroundColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(34, 197, 94)',
+                                'rgb(168, 85, 247)',
+                                'rgb(249, 115, 22)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.add('hidden');
+            }
+        });
+
+
+
+
+
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97095ab1d3c99d00',t:'MTc1NTQzNTYyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+</body>
+</html>
