@@ -540,29 +540,6 @@ class MosqueAPI {
     }
 }
 
-            static async generateReport(reportType, startDate, endDate) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'generateReport',
-                        reportType: reportType,
-                        startDate: startDate,
-                        endDate: endDate,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
-            }
-
-            static async createBackup(backupType = 'full') {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'createBackup',
-                        backupType: backupType
-                    }
-                });
-            }
-        }
 
         // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
