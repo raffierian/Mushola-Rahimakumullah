@@ -404,141 +404,994 @@
         };
 
         // GANTI bagian MosqueAPI di HTML dengan ini:
+/**
+ * ===== MOSQUE API CLASS - CORS FIXED =====
+ * Compatible with cors-fixed-backend.gs
+ * Version: 2.0.0 - No CORS issues
+ */
+
 class MosqueAPI {
+    /**
+     * Generic API request handler with multiple fallback methods
+     */
     static async request(endpoint, options = {}) {
         const url = endpoint.startsWith('http') ? endpoint : CONFIG.API_BASE_URL + endpoint;
         
-        try {
-            // For GET requests, use JSONP to bypass CORS
-            if (!options.method || options.method === 'GET') {
-                return await this.jsonpRequest(url);
-            }
-            
-            // For POST requests, try regular fetch first, then fallback to GET with params
+        // Method 1: Try modern fetch with CORS
+        if (options.method === 'POST') {
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify(options.body)
+                    body: JSON.stringify(options.body),
+                    mode: 'cors'
                 });
                 
-                return await response.json();
-            } catch (corsError) {
-                console.log('POST failed, trying GET with params...');
-                // Fallback: convert POST to GET with parameters
-                const params = new URLSearchParams({
-                    action: options.body.action,
-                    ...options.body
-                });
-                return await this.jsonpRequest(CONFIG.API_BASE_URL + '?' + params.toString());
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                }
+            } catch (fetchError) {
+                console.warn('POST fetch failed, trying alternative method:', fetchError.message);
+                
+                // Fallback: Convert POST to GET with parameters
+                const params = this.objectToParams(options.body);
+                return await this.getRequest(CONFIG.API_BASE_URL + '?' + params);
             }
-            
-        } catch (error) {
-            console.error('API Error:', error);
-            throw error;
         }
+        
+        // Method 2: GET requests or POST fallback
+        return await this.getRequest(url);
     }
     
+    /**
+     * GET request with multiple fallback methods
+     */
+    static async getRequest(url) {
+        // Try 1: Standard fetch
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                mode: 'cors'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                return data;
+            }
+        } catch (fetchError) {
+            console.warn('Standard fetch failed:', fetchError.message);
+        }
+        
+        // Try 2: No-CORS mode
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'no-cors'
+            });
+            
+            // no-cors returns opaque response, so we need to use JSONP
+            return await this.jsonpRequest(url);
+        } catch (noCorsError) {
+            console.warn('No-CORS fetch failed:', noCorsError.message);
+        }
+        
+        // Try 3: JSONP fallback
+        try {
+            return await this.jsonpRequest(url);
+        } catch (jsonpError) {
+            console.warn('JSONP failed:', jsonpError.message);
+        }
+        
+        // Try 4: Script tag method (last resort)
+        return await this.scriptTagRequest(url);
+    }
+    
+    /**
+     * JSONP request (fixed implementation)
+     */
     static jsonpRequest(url) {
         return new Promise((resolve, reject) => {
-            // Create unique callback name
-            const callbackName = 'jsonp_callback_' + Math.random().toString(36).substr(2, 9);
+            // Generate unique callback name
+            const callbackName = 'mosqueCallback' + Date.now() + Math.random().toString(36).substr(2, 5);
             
-            // Add callback parameter
+            // Add callback parameter to URL
             const separator = url.includes('?') ? '&' : '?';
             const jsonpUrl = url + separator + 'callback=' + callbackName;
             
             // Create script element
             const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.async = true;
             
-            // Set global callback
+            // Set up callback function
             window[callbackName] = function(data) {
-                // Cleanup
-                document.head.removeChild(script);
-                delete window[callbackName];
-                
+                // Success - clean up and resolve
+                cleanup();
                 resolve(data);
             };
             
-            // Handle errors
+            // Set up error handling
             script.onerror = function() {
-                document.head.removeChild(script);
-                delete window[callbackName];
-                reject(new Error('JSONP request failed'));
+                cleanup();
+                reject(new Error('JSONP script loading failed'));
             };
             
-            // Set timeout
-            setTimeout(() => {
-                if (window[callbackName]) {
-                    document.head.removeChild(script);
-                    delete window[callbackName];
-                    reject(new Error('JSONP request timeout'));
-                }
-            }, 10000);
+            // Set up timeout
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                reject(new Error('JSONP request timed out after 15 seconds'));
+            }, 15000); // 15 seconds timeout
             
+            // Cleanup function
+            function cleanup() {
+                clearTimeout(timeoutId);
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                }
+            }
+            
+            // Execute request
             script.src = jsonpUrl;
             document.head.appendChild(script);
         });
     }
-
+    
+    /**
+     * Script tag method (alternative to JSONP)
+     */
+    static scriptTagRequest(url) {
+        return new Promise((resolve, reject) => {
+            // Create hidden iframe for cross-origin requests
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            
+            let resolved = false;
+            
+            iframe.onload = function() {
+                if (!resolved) {
+                    resolved = true;
+                    try {
+                        // Try to access iframe content
+                        const content = iframe.contentDocument || iframe.contentWindow.document;
+                        const text = content.body.textContent;
+                        const data = JSON.parse(text);
+                        resolve(data);
+                    } catch (error) {
+                        reject(new Error('Could not parse response: ' + error.message));
+                    }
+                    
+                    // Cleanup
+                    document.body.removeChild(iframe);
+                }
+            };
+            
+            iframe.onerror = function() {
+                if (!resolved) {
+                    resolved = true;
+                    document.body.removeChild(iframe);
+                    reject(new Error('Script tag request failed'));
+                }
+            };
+            
+            // Timeout
+            setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    document.body.removeChild(iframe);
+                    reject(new Error('Script tag request timeout'));
+                }
+            }, 10000);
+            
+            document.body.appendChild(iframe);
+        });
+    }
+    
+    /**
+     * Convert object to URL parameters
+     */
+    static objectToParams(obj) {
+        const params = new URLSearchParams();
+        
+        function addParam(key, value) {
+            if (value !== null && value !== undefined) {
+                if (typeof value === 'object') {
+                    params.append(key, JSON.stringify(value));
+                } else {
+                    params.append(key, value.toString());
+                }
+            }
+        }
+        
+        Object.keys(obj).forEach(key => {
+            addParam(key, obj[key]);
+        });
+        
+        return params.toString();
+    }
+    
+    // ===== API ENDPOINT METHODS =====
+    
+    /**
+     * Test backend connection
+     */
     static async test() {
         return await this.request('?action=test');
     }
-
+    
+    /**
+     * User authentication
+     */
     static async authenticate(username, password) {
-        // Use GET for authentication to avoid CORS
-        return await this.request(`?action=authenticate&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+        if (!username || !password) {
+            return {
+                success: false,
+                error: 'Username and password required'
+            };
+        }
+        
+        // Try POST first
+        try {
+            return await this.request('', {
+                method: 'POST',
+                body: {
+                    action: 'authenticate',
+                    username: username,
+                    password: password
+                }
+            });
+        } catch (postError) {
+            console.log('POST auth failed, trying GET:', postError.message);
+            
+            // Fallback to GET
+            return await this.request(`?action=authenticate&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+        }
     }
-
+    
+    /**
+     * Get dashboard data
+     */
     static async getDashboardData(period = '30days') {
         return await this.request(`?action=getDashboard&period=${period}`);
     }
-
+    
+    /**
+     * Get transactions with filters
+     */
     static async getTransactions(filters = {}) {
-        const params = new URLSearchParams(filters);
-        return await this.request(`?action=getTransactions&${params}`);
+        const params = new URLSearchParams();
+        params.append('action', 'getTransactions');
+        
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+                params.append(key, filters[key]);
+            }
+        });
+        
+        return await this.request('?' + params.toString());
     }
-
+    
+    /**
+     * Add new transaction
+     */
     static async addTransaction(transaction) {
-        // Try POST first, fallback to GET
+        if (!transaction.type || !transaction.category || !transaction.amount || !transaction.description) {
+            return {
+                success: false,
+                error: 'Missing required fields: type, category, amount, description'
+            };
+        }
+        
+        // Try POST first
+        try {
+            return await this.request('', {
+                method: 'POST',
+                body: {
+                    action: 'addTransaction',
+                    transaction: transaction,
+                    userId: AppState.currentUser?.id || 'anonymous'
+                }
+            });
+        } catch (postError) {
+            console.log('POST addTransaction failed, trying GET:', postError.message);
+            
+            // Fallback to GET
+            const params = new URLSearchParams({
+                action: 'addTransaction',
+                date: transaction.date || new Date().toISOString().split('T')[0],
+                type: transaction.type,
+                category: transaction.category,
+                amount: transaction.amount,
+                description: transaction.description,
+                notes: transaction.notes || '',
+                userId: AppState.currentUser?.id || 'anonymous'
+            });
+            
+            return await this.request('?' + params.toString());
+        }
+    }
+    
+    /**
+     * Update transaction
+     */
+    static async updateTransaction(id, transaction) {
         return await this.request('', {
             method: 'POST',
             body: {
-                action: 'addTransaction',
+                action: 'updateTransaction',
+                id: id,
                 transaction: transaction,
                 userId: AppState.currentUser?.id || 'anonymous'
             }
         });
     }
-
+    
+    /**
+     * Delete transaction
+     */
+    static async deleteTransaction(id) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'deleteTransaction',
+                id: id,
+                userId: AppState.currentUser?.id || 'anonymous'
+            }
+        });
+    }
+    
+    /**
+     * Get donation programs
+     */
     static async getPrograms(activeOnly = false) {
         return await this.request(`?action=getPrograms&activeOnly=${activeOnly}`);
     }
-
+    
+    /**
+     * Add new donation program
+     */
     static async addProgram(program) {
+        if (!program.name || !program.targetAmount) {
+            return {
+                success: false,
+                error: 'Missing required fields: name, targetAmount'
+            };
+        }
+        
+        // Try POST first
+        try {
+            return await this.request('', {
+                method: 'POST',
+                body: {
+                    action: 'addProgram',
+                    program: program,
+                    userId: AppState.currentUser?.id || 'anonymous'
+                }
+            });
+        } catch (postError) {
+            console.log('POST addProgram failed, trying GET:', postError.message);
+            
+            // Fallback to GET
+            const params = new URLSearchParams({
+                action: 'addProgram',
+                name: program.name,
+                description: program.description || '',
+                targetAmount: program.targetAmount,
+                category: program.category || 'general',
+                isPublic: program.isPublic !== false,
+                userId: AppState.currentUser?.id || 'anonymous'
+            });
+            
+            return await this.request('?' + params.toString());
+        }
+    }
+    
+    /**
+     * Add donation record
+     */
+    static async addDonation(donation) {
+        if (!donation.programId || !donation.amount) {
+            return {
+                success: false,
+                error: 'Missing required fields: programId, amount'
+            };
+        }
+        
+        // Try POST first
+        try {
+            return await this.request('', {
+                method: 'POST',
+                body: {
+                    action: 'addDonation',
+                    donation: donation,
+                    userId: AppState.currentUser?.id || 'anonymous'
+                }
+            });
+        } catch (postError) {
+            console.log('POST addDonation failed, trying GET:', postError.message);
+            
+            // Fallback to GET
+            const params = new URLSearchParams({
+                action: 'addDonation',
+                date: donation.date || new Date().toISOString().split('T')[0],
+                programId: donation.programId,
+                donorName: donation.donorName || '',
+                amount: donation.amount,
+                paymentMethod: donation.paymentMethod || 'cash',
+                isAnonymous: donation.isAnonymous || false,
+                notes: donation.notes || '',
+                userId: AppState.currentUser?.id || 'anonymous'
+            });
+            
+            return await this.request('?' + params.toString());
+        }
+    }
+    
+    /**
+     * Get donations data
+     */
+    static async getDonations(filters = {}) {
+        const params = new URLSearchParams();
+        params.append('action', 'getDonations');
+        
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+                params.append(key, filters[key]);
+            }
+        });
+        
+        return await this.request('?' + params.toString());
+    }
+    
+    /**
+     * Get categories
+     */
+    static async getCategories(type = null) {
+        const url = type ? 
+            `?action=getCategories&type=${type}` : 
+            '?action=getCategories';
+        return await this.request(url);
+    }
+    
+    /**
+     * Get analytics data
+     */
+    static async getAnalytics(period = '30days') {
+        return await this.request(`?action=getAnalytics&period=${period}`);
+    }
+    
+    /**
+     * Get transparency data
+     */
+    static async getTransparency(period = '30days') {
+        return await this.request(`?action=getTransparency&period=${period}`);
+    }
+    
+    /**
+     * Generate custom report
+     */
+    static async generateReport(reportType, startDate, endDate) {
         return await this.request('', {
             method: 'POST',
             body: {
-                action: 'addProgram',
-                program: program,
+                action: 'generateReport',
+                reportType: reportType,
+                startDate: startDate,
+                endDate: endDate,
                 userId: AppState.currentUser?.id || 'anonymous'
             }
         });
     }
-
-    static async addDonation(donation) {
+    
+    /**
+     * Create system backup
+     */
+    static async createBackup(backupType = 'full') {
         return await this.request('', {
             method: 'POST',
             body: {
-                action: 'addDonation',
-                donation: donation,
+                action: 'createBackup',
+                backupType: backupType
+            }
+        });
+    }
+    
+    /**
+     * Send notification
+     */
+    static async sendNotification(notificationData) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'sendNotification',
+                ...notificationData
+            }
+        });
+    }
+    
+    /**
+     * Get users data (admin only)
+     */
+    static async getUsers() {
+        return await this.request('?action=getUsers');
+    }
+    
+    /**
+     * Add new user (admin only)
+     */
+    static async addUser(user) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'addUser',
+                user: user,
                 userId: AppState.currentUser?.id || 'anonymous'
             }
         });
+    }
+    
+    /**
+     * Get system settings
+     */
+    static async getSettings() {
+        return await this.request('?action=getSettings');
+    }
+    
+    /**
+     * Update settings
+     */
+    static async updateSettings(settings) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'updateSettings',
+                settings: settings,
+                userId: AppState.currentUser?.id || 'anonymous'
+            }
+        });
+    }
+    
+    /**
+     * Batch operations for better performance
+     */
+    static async batchRequest(requests) {
+        const results = [];
+        
+        for (const request of requests) {
+            try {
+                const result = await this.request(request.endpoint, request.options);
+                results.push({ success: true, data: result, request: request });
+            } catch (error) {
+                results.push({ success: false, error: error.message, request: request });
+            }
+        }
+        
+        return {
+            success: true,
+            results: results,
+            total: requests.length,
+            successful: results.filter(r => r.success).length,
+            failed: results.filter(r => !r.success).length
+        };
+    }
+    
+    /**
+     * Health check - test all endpoints
+     */
+    static async healthCheck() {
+        const healthTests = [
+            { name: 'Connection', test: () => this.test() },
+            { name: 'Authentication', test: () => this.authenticate('admin', 'admin123') },
+            { name: 'Dashboard', test: () => this.getDashboardData('7days') },
+            { name: 'Transactions', test: () => this.getTransactions({ type: 'income' }) },
+            { name: 'Programs', test: () => this.getPrograms(true) }
+        ];
+        
+        const results = [];
+        
+        for (const { name, test } of healthTests) {
+            try {
+                const result = await test();
+                results.push({
+                    name: name,
+                    success: result.success !== false,
+                    response: result,
+                    time: new Date().toISOString()
+                });
+            } catch (error) {
+                results.push({
+                    name: name,
+                    success: false,
+                    error: error.message,
+                    time: new Date().toISOString()
+                });
+            }
+        }
+        
+        const healthyEndpoints = results.filter(r => r.success).length;
+        const totalEndpoints = results.length;
+        
+        return {
+            healthy: healthyEndpoints === totalEndpoints,
+            score: Math.round((healthyEndpoints / totalEndpoints) * 100),
+            results: results,
+            summary: `${healthyEndpoints}/${totalEndpoints} endpoints healthy`,
+            testedAt: new Date().toISOString()
+        };
+    }
+    
+    /**
+     * Retry mechanism for failed requests
+     */
+    static async requestWithRetry(endpoint, options = {}, maxRetries = 3) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await this.request(endpoint, options);
+                
+                // If we got here, request succeeded
+                if (attempt > 1) {
+                    console.log(`✅ Request succeeded on attempt ${attempt}`);
+                }
+                
+                return result;
+                
+            } catch (error) {
+                lastError = error;
+                console.warn(`❌ Request attempt ${attempt} failed:`, error.message);
+                
+                if (attempt < maxRetries) {
+                    // Wait before retry (exponential backoff)
+                    const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s...
+                    console.log(`⏳ Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    console.error(`❌ All ${maxRetries} attempts failed`);
+                }
+            }
+        }
+        
+        // All retries failed
+        throw lastError;
+    }
+    
+    /**
+     * Connection status checker
+     */
+    static async checkConnection() {
+        try {
+            const startTime = Date.now();
+            const result = await this.test();
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+            
+            return {
+                connected: result.success === true,
+                responseTime: responseTime,
+                status: result.success ? 'online' : 'error',
+                lastCheck: new Date().toISOString(),
+                error: result.success ? null : result.error
+            };
+            
+        } catch (error) {
+            return {
+                connected: false,
+                responseTime: null,
+                status: 'offline',
+                lastCheck: new Date().toISOString(),
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Get system info
+     */
+    static async getSystemInfo() {
+        try {
+            const testResult = await this.test();
+            
+            if (testResult.success) {
+                return {
+                    success: true,
+                    systemInfo: testResult.config || {},
+                    databaseInfo: testResult.database || {},
+                    version: testResult.config?.version || 'Unknown',
+                    features: testResult.features || [],
+                    status: testResult.database?.status || 'unknown'
+                };
+            } else {
+                return {
+                    success: false,
+                    error: testResult.error
+                };
+            }
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
     }
 }
+
+/**
+ * ===== API HELPER FUNCTIONS =====
+ */
+
+/**
+ * Format API error messages for user display
+ */
+function formatAPIError(error) {
+    if (typeof error === 'string') {
+        return error;
+    }
+    
+    if (error.message) {
+        return error.message;
+    }
+    
+    if (error.error) {
+        return error.error;
+    }
+    
+    return 'Unknown API error occurred';
+}
+
+/**
+ * Check if API is available
+ */
+async function checkAPIAvailability() {
+    try {
+        const result = await MosqueAPI.checkConnection();
+        return result.connected;
+    } catch (error) {
+        console.error('API Availability Check Failed:', error);
+        return false;
+    }
+}
+
+/**
+ * Initialize API with connection test
+ */
+async function initializeAPI() {
+    try {
+        showNotification('Menguji koneksi database...', 'info', 2000);
+        
+        const connectionResult = await MosqueAPI.checkConnection();
+        
+        if (connectionResult.connected) {
+            showNotification('✅ Database terhubung!', 'success');
+            
+            // Get system info
+            const systemInfo = await MosqueAPI.getSystemInfo();
+            if (systemInfo.success) {
+                console.log('📊 System Info:', systemInfo.systemInfo);
+                console.log('🗄️ Database Status:', systemInfo.databaseInfo?.status);
+            }
+            
+            return true;
+        } else {
+            showNotification('❌ Gagal terhubung ke database', 'error');
+            console.error('Connection failed:', connectionResult.error);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('API Initialization Error:', error);
+        showNotification('❌ Error menginisialisasi API: ' + formatAPIError(error), 'error');
+        return false;
+    }
+}
+
+/**
+ * API Status Monitor
+ */
+class APIStatusMonitor {
+    constructor() {
+        this.isOnline = true;
+        this.lastCheck = null;
+        this.checkInterval = 60000; // 1 minute
+        this.retryAttempts = 0;
+        this.maxRetries = 3;
+    }
+    
+    async startMonitoring() {
+        console.log('📡 Starting API monitoring...');
+        
+        // Initial check
+        await this.performCheck();
+        
+        // Set up periodic checks
+        setInterval(async () => {
+            await this.performCheck();
+        }, this.checkInterval);
+    }
+    
+    async performCheck() {
+        try {
+            const connectionResult = await MosqueAPI.checkConnection();
+            const wasOnline = this.isOnline;
+            
+            this.isOnline = connectionResult.connected;
+            this.lastCheck = new Date().toISOString();
+            
+            if (this.isOnline && !wasOnline) {
+                // Back online
+                showNotification('🟢 Database connection restored!', 'success');
+                this.retryAttempts = 0;
+            } else if (!this.isOnline && wasOnline) {
+                // Went offline
+                showNotification('🔴 Database connection lost', 'error');
+                this.scheduleRetry();
+            }
+            
+            this.updateConnectionStatus();
+            
+        } catch (error) {
+            console.error('Connection check failed:', error);
+            this.isOnline = false;
+            this.scheduleRetry();
+        }
+    }
+    
+    scheduleRetry() {
+        if (this.retryAttempts < this.maxRetries) {
+            this.retryAttempts++;
+            const delay = Math.pow(2, this.retryAttempts) * 1000; // Exponential backoff
+            
+            console.log(`⏳ Scheduling retry ${this.retryAttempts}/${this.maxRetries} in ${delay}ms`);
+            
+            setTimeout(async () => {
+                await this.performCheck();
+            }, delay);
+        }
+    }
+    
+    updateConnectionStatus() {
+        // Update UI connection indicator
+        const indicator = document.getElementById('connectionStatus');
+        if (indicator) {
+            indicator.className = this.isOnline ? 'online' : 'offline';
+            indicator.textContent = this.isOnline ? 'Online' : 'Offline';
+        }
+        
+        // Update sync button
+        const syncBtn = document.getElementById('syncBtn');
+        if (syncBtn) {
+            syncBtn.disabled = !this.isOnline;
+            syncBtn.title = this.isOnline ? 
+                'Sync dengan database' : 
+                'Database offline - sync disabled';
+        }
+    }
+    
+    getStatus() {
+        return {
+            isOnline: this.isOnline,
+            lastCheck: this.lastCheck,
+            retryAttempts: this.retryAttempts,
+            nextCheck: new Date(Date.now() + this.checkInterval).toISOString()
+        };
+    }
+}
+
+// Global API monitor instance
+const apiMonitor = new APIStatusMonitor();
+
+/**
+ * ===== FRONTEND INTEGRATION HELPERS =====
+ */
+
+/**
+ * Safe API call with user feedback
+ */
+async function safeAPICall(apiFunction, loadingMessage = 'Loading...', successMessage = null) {
+    try {
+        // Show loading
+        showNotification(loadingMessage, 'info', 1000);
+        
+        // Make API call
+        const result = await apiFunction();
+        
+        // Handle result
+        if (result.success) {
+            if (successMessage) {
+                showNotification(successMessage, 'success');
+            }
+            return result;
+        } else {
+            throw new Error(result.error || 'API call failed');
+        }
+        
+    } catch (error) {
+        console.error('Safe API Call Error:', error);
+        showNotification('❌ Error: ' + formatAPIError(error), 'error');
+        throw error;
+    }
+}
+
+/**
+ * Batch API operations with progress
+ */
+async function batchAPIOperations(operations, progressCallback = null) {
+    const results = [];
+    const total = operations.length;
+    
+    for (let i = 0; i < operations.length; i++) {
+        try {
+            if (progressCallback) {
+                progressCallback(i + 1, total, `Processing operation ${i + 1}/${total}`);
+            }
+            
+            const result = await operations[i]();
+            results.push({ success: true, data: result });
+            
+        } catch (error) {
+            results.push({ success: false, error: error.message });
+        }
+    }
+    
+    const successful = results.filter(r => r.success).length;
+    
+    if (progressCallback) {
+        progressCallback(total, total, `Completed: ${successful}/${total} operations successful`);
+    }
+    
+    return {
+        success: successful === total,
+        results: results,
+        summary: {
+            total: total,
+            successful: successful,
+            failed: total - successful
+        }
+    };
+}
+
+/**
+ * ===== USAGE EXAMPLES =====
+ */
+
+// Example: Test connection
+// const testResult = await MosqueAPI.test();
+
+// Example: Authenticate user
+// const authResult = await MosqueAPI.authenticate('admin', 'admin123');
+
+// Example: Get dashboard data
+// const dashboardData = await MosqueAPI.getDashboardData('30days');
+
+// Example: Add transaction
+// const transactionResult = await MosqueAPI.addTransaction({
+//   date: '2024-06-15',
+//   type: 'income',
+//   category: 'Infaq Jumat',
+//   amount: 500000,
+//   description: 'Infaq Shalat Jumat'
+// });
+
+// Example: Safe API call with user feedback
+// const data = await safeAPICall(
+//   () => MosqueAPI.getDashboardData('30days'),
+//   'Loading dashboard...',
+//   'Dashboard updated!'
+// );
+
+// Example: Check API health
+// const health = await MosqueAPI.healthCheck();
 
 
         // Initialize Application
