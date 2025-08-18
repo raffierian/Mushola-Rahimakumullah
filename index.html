@@ -552,32 +552,7 @@ class MosqueAPI {
  * ===== MISSING FUNCTIONS - ADD TO FRONTEND =====
  */
 
-// ===== CHART DRAWING FUNCTIONS =====
 
-/**
- * Draw Finance Chart for Dashboard
- */
-function drawFinanceChart() {
-    try {
-        const chartContainer = document.getElementById('financeChart');
-        if (!chartContainer) return;
-        
-        // Use chart data from dashboard
-        const chartData = AppState.data.dashboardData.chartData || [];
-        
-        if (chartData.length === 0) {
-            // Create simple bar chart with sample data
-            createSimpleBarChart();
-        } else {
-            // Create chart with real data
-            createDynamicChart(chartData);
-        }
-        
-    } catch (error) {
-        console.error('Draw Finance Chart Error:', error);
-        createFallbackChart();
-    }
-}
 
 function createSimpleBarChart() {
     const chartContainer = document.getElementById('financeChart');
