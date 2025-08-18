@@ -403,118 +403,142 @@
             }
         };
 
-        // API Functions - REAL BACKEND INTEGRATION
-        class MosqueAPI {
-            static async request(endpoint, options = {}) {
-                const url = endpoint.startsWith('http') ? endpoint : CONFIG.API_BASE_URL + endpoint;
+        // GANTI bagian MosqueAPI di HTML dengan ini:
+class MosqueAPI {
+    static async request(endpoint, options = {}) {
+        const url = endpoint.startsWith('http') ? endpoint : CONFIG.API_BASE_URL + endpoint;
+        
+        try {
+            // For GET requests, use JSONP to bypass CORS
+            if (!options.method || options.method === 'GET') {
+                return await this.jsonpRequest(url);
+            }
+            
+            // For POST requests, try regular fetch first, then fallback to GET with params
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(options.body)
+                });
                 
-                try {
-                    const response = await fetch(url, {
-                        method: options.method || 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...options.headers
-                        },
-                        body: options.body ? JSON.stringify(options.body) : undefined,
-                        ...options
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Network error');
-                    }
-                    
-                    return data;
-                } catch (error) {
-                    console.error('API Error:', error);
-                    throw error;
+                return await response.json();
+            } catch (corsError) {
+                console.log('POST failed, trying GET with params...');
+                // Fallback: convert POST to GET with parameters
+                const params = new URLSearchParams({
+                    action: options.body.action,
+                    ...options.body
+                });
+                return await this.jsonpRequest(CONFIG.API_BASE_URL + '?' + params.toString());
+            }
+            
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+    
+    static jsonpRequest(url) {
+        return new Promise((resolve, reject) => {
+            // Create unique callback name
+            const callbackName = 'jsonp_callback_' + Math.random().toString(36).substr(2, 9);
+            
+            // Add callback parameter
+            const separator = url.includes('?') ? '&' : '?';
+            const jsonpUrl = url + separator + 'callback=' + callbackName;
+            
+            // Create script element
+            const script = document.createElement('script');
+            
+            // Set global callback
+            window[callbackName] = function(data) {
+                // Cleanup
+                document.head.removeChild(script);
+                delete window[callbackName];
+                
+                resolve(data);
+            };
+            
+            // Handle errors
+            script.onerror = function() {
+                document.head.removeChild(script);
+                delete window[callbackName];
+                reject(new Error('JSONP request failed'));
+            };
+            
+            // Set timeout
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    document.head.removeChild(script);
+                    delete window[callbackName];
+                    reject(new Error('JSONP request timeout'));
                 }
-            }
+            }, 10000);
+            
+            script.src = jsonpUrl;
+            document.head.appendChild(script);
+        });
+    }
 
-            static async test() {
-                return await this.request('?action=test');
-            }
+    static async test() {
+        return await this.request('?action=test');
+    }
 
-            static async authenticate(username, password) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'authenticate',
-                        username: username,
-                        password: password
-                    }
-                });
-            }
+    static async authenticate(username, password) {
+        // Use GET for authentication to avoid CORS
+        return await this.request(`?action=authenticate&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+    }
 
-            static async getDashboardData(period = '30days') {
-                return await this.request(`?action=getDashboard&period=${period}`);
-            }
+    static async getDashboardData(period = '30days') {
+        return await this.request(`?action=getDashboard&period=${period}`);
+    }
 
-            static async getTransactions(filters = {}) {
-                const params = new URLSearchParams(filters);
-                return await this.request(`?action=getTransactions&${params}`);
-            }
+    static async getTransactions(filters = {}) {
+        const params = new URLSearchParams(filters);
+        return await this.request(`?action=getTransactions&${params}`);
+    }
 
-            static async addTransaction(transaction) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'addTransaction',
-                        transaction: transaction,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
+    static async addTransaction(transaction) {
+        // Try POST first, fallback to GET
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'addTransaction',
+                transaction: transaction,
+                userId: AppState.currentUser?.id || 'anonymous'
             }
+        });
+    }
 
-            static async updateTransaction(id, transaction) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'updateTransaction',
-                        id: id,
-                        transaction: transaction,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
-            }
+    static async getPrograms(activeOnly = false) {
+        return await this.request(`?action=getPrograms&activeOnly=${activeOnly}`);
+    }
 
-            static async deleteTransaction(id) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'deleteTransaction',
-                        id: id,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
+    static async addProgram(program) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'addProgram',
+                program: program,
+                userId: AppState.currentUser?.id || 'anonymous'
             }
+        });
+    }
 
-            static async getPrograms(activeOnly = false) {
-                return await this.request(`?action=getPrograms&activeOnly=${activeOnly}`);
+    static async addDonation(donation) {
+        return await this.request('', {
+            method: 'POST',
+            body: {
+                action: 'addDonation',
+                donation: donation,
+                userId: AppState.currentUser?.id || 'anonymous'
             }
-
-            static async addProgram(program) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'addProgram',
-                        program: program,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
-            }
-
-            static async addDonation(donation) {
-                return await this.request('', {
-                    method: 'POST',
-                    body: {
-                        action: 'addDonation',
-                        donation: donation,
-                        userId: AppState.currentUser?.id || 'anonymous'
-                    }
-                });
-            }
+        });
+    }
+}
 
             static async generateReport(reportType, startDate, endDate) {
                 return await this.request('', {
